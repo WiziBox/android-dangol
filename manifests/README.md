@@ -30,3 +30,7 @@ python3 tools/apply_patches.py --source /absolute/path/to/android9-source --appl
 ```
 
 The tool checks all eleven project's base commits, patch hashes, clean status and applicability before modifying any project. It does not reset/delete existing changes. An unexpected application failure may leave earlier projects applied; the report lists them and stops without an automatic reset. This is source preparation only, not a full ROM build or flashing command.
+
+## Verification recorded on 2026-10-11
+
+At distribution revision `60dd1429efec0612356fab40b00a2ed94e7712a5`, the documented `repo init` succeeded in a separate empty WSL directory. `repo list --all` resolved 709 manifest projects. All eleven patches passed base-commit applicability checks using disposable Git indexes. The 26 unit tests passed in GitHub Actions on Windows and Linux. This does **not** verify full `repo sync`, device/vendor inputs, an Android build, bootability or flashing.
