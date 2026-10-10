@@ -21,6 +21,8 @@ Windows에서는 설치한 `python` 명령을 사용할 수 있습니다. 종료
 
 ## 남은 작업
 
+2026-10-11: [커밋 고정 소스 manifest와 패치 준비 절차](../manifests/README.md)를 추가했습니다. 709개 upstream 프로젝트와 11개 프로젝트의 tracked 텍스트 패치는 확보했지만 device/vendor·커널/DTB·WebView LFS 입력·boot 패키징은 미완성입니다. `tools/apply_patches.py`는 기존 수정본을 덮어쓰지 않고 커밋·해시·깨끗한 상태를 먼저 검사합니다.
+
 1. 커밋 고정 upstream manifest, 기기 소스와 최종 후속 수정 정리
 2. 원본 kernel/DTB·독점 파일의 소스 및 재배포 조건 또는 사용자 추출 방법 확인
 3. 개인 인증키 없는 배포용 ramdisk·boot 패키징

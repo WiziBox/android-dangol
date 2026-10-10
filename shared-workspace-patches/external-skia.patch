@@ -1,0 +1,44 @@
+# MODIFIED by the WiziBox Android 9 port project.
+# Original file licenses retained; see additional-provenance.json and ../third-party-notices.
+diff --git a/src/gpu/gl/GrGLCaps.cpp b/src/gpu/gl/GrGLCaps.cpp
+index 8b0235b5ee26601f6c9074b65c134ac3d634280b..b6f6bab72385bb87db3972d9ed936162be9bb59d 100644
+--- a/src/gpu/gl/GrGLCaps.cpp
++++ b/src/gpu/gl/GrGLCaps.cpp
+@@ -1326,6 +1326,7 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
+     bool disableTextureRedForMesa = false;
+     bool disableSRGBForX86PowerVR = false;
+     bool disableSRGBWriteControlForAdreno4xx = false;
++    bool disableSRGBWriteControlForLegacyBayTrail = false;
+     bool disableR8TexStorageForANGLEGL = false;
+     bool disableSRGBRenderWithMSAAForMacAMD = false;
+ 
+@@ -1344,6 +1345,16 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
+         // blacklist that device (and any others that might be sharing the same driver).
+         disableSRGBForX86PowerVR = isX86PowerVR;
+         disableSRGBWriteControlForAdreno4xx = kAdreno4xx_GrGLRenderer == ctxInfo.renderer();
++        // Acer A1-840FHD's Intel GLES build advertises EXT_sRGB_write_control,
++        // but Disable(GL_FRAMEBUFFER_SRGB) returns GL_INVALID_ENUM. Keep real
++        // ES sRGB format support; only avoid the unsupported write-control toggle.
++        if (kGLES_GrGLStandard == ctxInfo.standard() && kIntel_GrGLVendor == ctxInfo.vendor()) {
++            const char* renderer = reinterpret_cast<const char*>(gli->fFunctions.fGetString(GR_GL_RENDERER));
++            const char* version = reinterpret_cast<const char*>(gli->fFunctions.fGetString(GR_GL_VERSION));
++            disableSRGBWriteControlForLegacyBayTrail = renderer && version &&
++                0 == strcmp(renderer, "Intel(R) HD Graphics for BayTrail") &&
++                strstr(version, "Build 2.0.28075-");
++        }
+ 
+         // Angle with es2->GL has a bug where it will hang trying to call TexSubImage on GL_R8
+         // formats on miplevels > 0. We already disable texturing on gles > 2.0 so just need to
+@@ -1501,6 +1512,7 @@ void GrGLCaps::initConfigTable(const GrContextOptions& contextOptions,
+         // sRGB writing for destinations.
+         // See https://bug.skia.org/5329 for Adreno4xx issue.
+         fSRGBWriteControl = !disableSRGBWriteControlForAdreno4xx &&
++            !disableSRGBWriteControlForLegacyBayTrail &&
+             ctxInfo.hasExtension("GL_EXT_sRGB_write_control");
+     }
+     if (contextOptions.fRequireDecodeDisableForSRGB && !fSRGBDecodeDisableSupport) {
+@@ -2587,4 +2599,3 @@ bool GrGLCaps::getConfigFromBackendFormat(const GrBackendFormat& format, SkColor
+     return validate_sized_format(*glFormat, ct, config, fStandard);
+ }
+ 
+-

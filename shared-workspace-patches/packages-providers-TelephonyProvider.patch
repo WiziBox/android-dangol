@@ -1,0 +1,28 @@
+# MODIFIED by the WiziBox Android 9 port project.
+# Original file licenses retained; see additional-provenance.json and ../third-party-notices.
+diff --git a/src/com/android/providers/telephony/TelephonyProvider.java b/src/com/android/providers/telephony/TelephonyProvider.java
+index 6fecde9ab734c4836786a9f9794895d70451a36a..5106afd00902282116f3f7227d4aca3993e88776 100644
+--- a/src/com/android/providers/telephony/TelephonyProvider.java
++++ b/src/com/android/providers/telephony/TelephonyProvider.java
+@@ -1039,6 +1039,21 @@ public class TelephonyProvider extends ContentProvider
+         }
+ 
+         private void recreateSimInfoDB(Cursor c, SQLiteDatabase db, String[] proj) {
++            // This Wi-Fi tablet's original KitKat DB can have carriers but no
++            // siminfo. onOpen repairs that case too late: onUpgrade runs first.
++            // Create only the absent table. Preserve all existing subscription
++            // rows and use the original migration when the table is present.
++            if ("ducati2fhd".equals(android.os.Build.DEVICE)) {
++                try (Cursor tables = db.rawQuery(
++                        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
++                        new String[] {SIMINFO_TABLE})) {
++                    if (!tables.moveToFirst()) {
++                        createSimInfoTable(db, SIMINFO_TABLE);
++                        log("Acer migration: created absent siminfo table; existing tables retained");
++                        return;
++                    }
++                }
++            }
+             if (VDBG) {
+                 c = db.query(SIMINFO_TABLE, proj, null, null, null, null, null);
+                 log("dbh.onUpgrade:+ before upgrading " + SIMINFO_TABLE +

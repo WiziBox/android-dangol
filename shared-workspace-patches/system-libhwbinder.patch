@@ -1,0 +1,27 @@
+# MODIFIED by the WiziBox Android 9 port project.
+# Original file licenses retained; see additional-provenance.json and ../third-party-notices.
+diff --git a/Parcel.cpp b/Parcel.cpp
+index f33c4d537d20e10d22a3cf1c25fe197999e6023f..ced0d09ca3f08482679d95939528e4ff05fac48c 100644
+--- a/Parcel.cpp
++++ b/Parcel.cpp
+@@ -1088,6 +1088,20 @@ status_t Parcel::writeNativeHandleNoDup(const native_handle_t *handle,
+         .parent_offset = offsetof(native_handle_t, data),
+     };
+ 
++    if (handle->numFds == 0) {
++        ALOGE("ACER_FDA parent=%zu offset=%zu objects=%zu ints=%d",
++              buffer_handle, offsetof(native_handle_t, data), mObjectsSize, handle->numInts);
++        for (size_t i = 0; i < mObjectsSize; ++i) {
++            const auto* object = reinterpret_cast<const binder_buffer_object*>(mData + mObjects[i]);
++            if (isBuffer(*object)) {
++                ALOGE("ACER_FDA_BUFFER index=%zu flags=%u parent=%llu offset=%llu length=%llu",
++                      i, object->flags, static_cast<unsigned long long>(object->parent),
++                      static_cast<unsigned long long>(object->parent_offset),
++                      static_cast<unsigned long long>(object->length));
++            }
++        }
++    }
++
+     return writeObject(fd_array);
+ }
+ 

@@ -1,0 +1,47 @@
+# MODIFIED by the WiziBox Android 9 port project; changes licensed Apache-2.0.
+# Original notices retained in ../third-party-notices; see PROVENANCE.md.
+diff --git a/server/TetherController.cpp b/server/TetherController.cpp
+index bec8b10c6e7350bad0d3f3abfaaf06c58e9396a0..c0b0c556a0062da7f3b06403db8220f7238c9438 100644
+--- a/server/TetherController.cpp
++++ b/server/TetherController.cpp
+@@ -418,6 +418,17 @@ const std::list<std::string> &TetherController::getTetheredInterfaceList() const
+ 
+ int TetherController::setupIptablesHooks() {
+     int res;
++    // Statistics must remain queryable even when this legacy kernel rejects a
++    // later forwarding/NAT/TCPMSS setup step. An empty, unreferenced counter
++    // chain changes no packet policy and reports no fabricated traffic.
++    std::string defaultCommands = StringPrintf(
++        "*filter\n"
++        ":%s -\n"
++        "COMMIT\n", LOCAL_TETHER_COUNTERS_CHAIN);
++    res = iptablesRestoreFunction(V4V6, defaultCommands, nullptr);
++    if (res < 0) {
++        return res;
++    }
+     res = setDefaults();
+     if (res < 0) {
+         return res;
+@@ -431,22 +442,11 @@ int TetherController::setupIptablesHooks() {
+         "-A %s -p tcp --tcp-flags SYN SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+         "COMMIT\n", LOCAL_MANGLE_FORWARD);
+ 
+-    // This is for tethering counters. This chain is reached via --goto, and then RETURNS.
+-    std::string defaultCommands = StringPrintf(
+-        "*filter\n"
+-        ":%s -\n"
+-        "COMMIT\n", LOCAL_TETHER_COUNTERS_CHAIN);
+-
+     res = iptablesRestoreFunction(V4, mssRewriteCommand, nullptr);
+     if (res < 0) {
+         return res;
+     }
+ 
+-    res = iptablesRestoreFunction(V4V6, defaultCommands, nullptr);
+-    if (res < 0) {
+-        return res;
+-    }
+-
+     mFwdIfaces.clear();
+ 
+     return 0;

@@ -1,0 +1,43 @@
+# MODIFIED by the WiziBox Android 9 port project.
+# Original file licenses retained; see additional-provenance.json and ../third-party-notices.
+diff --git a/bcmdhd/wifi_hal/Android.mk b/bcmdhd/wifi_hal/Android.mk
+index b4fe46e966a9ba52d0a6f6ff69f2ffca53921b10..a89a972293f9f63dc0b101f978c43c7d053d0561 100644
+--- a/bcmdhd/wifi_hal/Android.mk
++++ b/bcmdhd/wifi_hal/Android.mk
+@@ -35,6 +35,10 @@ LOCAL_C_INCLUDES += \
+ 
+ LOCAL_HEADER_LIBRARIES := libutils_headers liblog_headers
+ 
++ifeq ($(TARGET_DEVICE),ducati2fhd)
++LOCAL_CFLAGS += -DACER_LEGACY_NL80211
++endif
++
+ LOCAL_SRC_FILES := \
+ 	wifi_hal.cpp \
+ 	rtt.cpp \
+diff --git a/bcmdhd/wifi_hal/wifi_hal.cpp b/bcmdhd/wifi_hal/wifi_hal.cpp
+index 81cad8a0ea10a969d135185ce51d6e344445122d..0b88707e6a2d66712e366e80b9710ca4c6e8d49f 100644
+--- a/bcmdhd/wifi_hal/wifi_hal.cpp
++++ b/bcmdhd/wifi_hal/wifi_hal.cpp
+@@ -296,10 +296,20 @@ wifi_error wifi_initialize(wifi_handle *handle)
+         return WIFI_ERROR_NOT_AVAILABLE;
+     }
+ 
++    bool require_vendor_events = true;
++#ifdef ACER_LEGACY_NL80211
++    // Kernel 3.10 and the original BCM43241 driver implement ordinary
++    // nl80211 scan/mlme/regulatory but not vendor multicast. Advanced vendor
++    // commands retain their real errors; do not fabricate supported features.
++    if (wifi_get_multicast_id(*handle, "nl80211", "vendor") < 0) {
++        require_vendor_events = false;
++        ALOGW("Legacy Acer kernel has no vendor events; advanced vendor APIs remain unsupported");
++    }
++#endif
+     if ((wifi_add_membership(*handle, "scan") < 0) ||
+         (wifi_add_membership(*handle, "mlme")  < 0) ||
+         (wifi_add_membership(*handle, "regulatory") < 0) ||
+-        (wifi_add_membership(*handle, "vendor") < 0)) {
++        (require_vendor_events && wifi_add_membership(*handle, "vendor") < 0)) {
+         ALOGE("Add membership failed");
+         nl_socket_free(cmd_sock);
+         nl_socket_free(event_sock);

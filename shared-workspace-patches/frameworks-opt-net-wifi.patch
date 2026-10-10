@@ -1,0 +1,50 @@
+# MODIFIED by the WiziBox Android 9 port project.
+# Original file licenses retained; see additional-provenance.json and ../third-party-notices.
+diff --git a/service/java/com/android/server/wifi/WifiApConfigStore.java b/service/java/com/android/server/wifi/WifiApConfigStore.java
+index d21452c8cf42639f29129293f03143a62131bcf5..fe426e501ebcc54adf5b6ee30b36e91628ab033b 100644
+--- a/service/java/com/android/server/wifi/WifiApConfigStore.java
++++ b/service/java/com/android/server/wifi/WifiApConfigStore.java
+@@ -27,6 +27,7 @@ import android.content.IntentFilter;
+ import android.net.wifi.WifiConfiguration;
+ import android.net.wifi.WifiConfiguration.KeyMgmt;
+ import android.os.Environment;
++import android.os.Build;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.text.TextUtils;
+@@ -42,6 +43,7 @@ import java.io.BufferedOutputStream;
+ import java.io.DataInputStream;
+ import java.io.DataOutputStream;
+ import java.io.FileInputStream;
++import java.io.File;
+ import java.io.FileOutputStream;
+ import java.io.IOException;
+ import java.nio.charset.StandardCharsets;
+@@ -130,7 +132,14 @@ public class WifiApConfigStore {
+             mWifiApConfig = getDefaultApConfiguration();
+ 
+             /* Save the default configuration to persistent storage. */
+-            writeApConfiguration(mApConfigFile, mWifiApConfig);
++            // Acer's legacy hotspot format may be incompatible. Use a secure
++            // default in memory, but never overwrite the preserved old file
++            // merely because it could not be parsed during an OS upgrade.
++            if ("ducati2fhd".equals(Build.DEVICE) && new File(mApConfigFile).exists()) {
++                Log.w(TAG, "Preserving incompatible Acer hotspot configuration on disk");
++            } else {
++                writeApConfiguration(mApConfigFile, mWifiApConfig);
++            }
+         }
+ 
+         IntentFilter filter = new IntentFilter();
+@@ -279,6 +288,11 @@ public class WifiApConfigStore {
+             }
+ 
+             int authType = in.readInt();
++            // Validate before BitSet.set: a mismatched legacy layout can turn
++            // string bytes into a huge bit index and kill system_server.
++            if (authType < 0 || authType >= KeyMgmt.strings.length) {
++                throw new IOException("Invalid hotspot authentication index");
++            }
+             config.allowedKeyManagement.set(authType);
+             if (authType != KeyMgmt.NONE) {
+                 config.preSharedKey = in.readUTF();

@@ -1,0 +1,668 @@
+# MODIFIED by the WiziBox Android 9 port project.
+# Original file licenses retained; see additional-provenance.json and ../third-party-notices.
+diff --git a/graphics/allocator/2.0/utils/passthrough/include/allocator-passthrough/2.0/Gralloc0Hal.h b/graphics/allocator/2.0/utils/passthrough/include/allocator-passthrough/2.0/Gralloc0Hal.h
+index 6c179be722fd0a0f453479da8440464c952df7a7..1de4000cd33e569ccb239f6ca9602f5be873a1d1 100644
+--- a/graphics/allocator/2.0/utils/passthrough/include/allocator-passthrough/2.0/Gralloc0Hal.h
++++ b/graphics/allocator/2.0/utils/passthrough/include/allocator-passthrough/2.0/Gralloc0Hal.h
+@@ -21,6 +21,14 @@
+ #endif
+ 
+ #include <cstring>  // for strerror
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <unistd.h>
++#include <mutex>
++#include <unordered_map>
++#include <cutils/properties.h>
++#include <drm/drm.h>
++#include <drm/drm_mode.h>
+ 
+ #include <allocator-hal/2.0/AllocatorHal.h>
+ #include <hardware/gralloc.h>
+@@ -51,6 +59,10 @@ class Gralloc0HalImpl : public Hal {
+     }
+ 
+     bool initWithModule(const hw_module_t* module) {
++        char device[PROPERTY_VALUE_MAX] = {};
++        property_get("ro.product.device", device, "");
++        mAcerPrime = !strcmp(device, "ducati2fhd") && module->name &&
++                     !strcmp(module->name, "Acer isolated Intel gralloc bridge");
+         int result = gralloc_open(module, &mDevice);
+         if (result) {
+             ALOGE("failed to open gralloc0 device: %s", strerror(-result));
+@@ -116,7 +128,22 @@ class Gralloc0HalImpl : public Hal {
+ 
+     void freeBuffers(const std::vector<const native_handle_t*>& buffers) override {
+         for (auto buffer : buffers) {
+-            int result = mDevice->free(mDevice, buffer);
++            const native_handle_t* legacy = buffer;
++            bool wrapped = false;
++            {
++                std::lock_guard<std::mutex> lock(mTransportMutex);
++                auto entry = mTransport.find(buffer);
++                if (entry != mTransport.end()) {
++                    legacy = entry->second;
++                    mTransport.erase(entry);
++                    wrapped = true;
++                }
++            }
++            int result = mDevice->free(mDevice, legacy);
++            if (wrapped) {
++                native_handle_close(buffer);
++                native_handle_delete(const_cast<native_handle_t*>(buffer));
++            }
+             if (result != 0) {
+                 ALOGE("failed to free buffer %p: %d", buffer, result);
+             }
+@@ -136,6 +163,18 @@ class Gralloc0HalImpl : public Hal {
+                                     info.usage, &buffer, &stride);
+         switch (result) {
+             case 0:
++                if (mAcerPrime) {
++                    native_handle_t* transport = exportAcerBuffer(buffer);
++                    if (!transport) {
++                        mDevice->free(mDevice, buffer);
++                        return Error::NO_RESOURCES;
++                    }
++                    {
++                        std::lock_guard<std::mutex> lock(mTransportMutex);
++                        mTransport.emplace(transport, buffer);
++                    }
++                    buffer = transport;
++                }
+                 *outBuffer = buffer;
+                 *outStride = stride;
+                 return Error::NONE;
+@@ -146,6 +185,64 @@ class Gralloc0HalImpl : public Hal {
+         }
+     }
+ 
++    native_handle_t* exportAcerBuffer(const native_handle_t* legacy) {
++        if (!legacy || legacy->version != sizeof(native_handle_t) ||
++            legacy->numFds != 0 || legacy->numInts != 14 || legacy->data[6] <= 0) {
++            ALOGE("Acer PRIME: unexpected legacy handle layout");
++            return nullptr;
++        }
++        int drmFd = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
++        if (drmFd < 0) return nullptr;
++        struct drm_gem_open gem = {};
++        gem.name = static_cast<uint32_t>(legacy->data[6]);
++        if (ioctl(drmFd, DRM_IOCTL_GEM_OPEN, &gem) < 0) {
++            ALOGE("Acer PRIME GEM_OPEN failed: %s", strerror(errno));
++            close(drmFd);
++            return nullptr;
++        }
++        struct drm_prime_handle prime = {};
++        // Capture actual kernel scanout geometry while the allocator still
++        // owns the original framebuffer. The ID will not survive free().
++        struct drm_mode_fb_cmd fb = {};
++        fb.fb_id = static_cast<uint32_t>(legacy->data[7]);
++        if (fb.fb_id && ioctl(drmFd, DRM_IOCTL_MODE_GETFB, &fb) < 0) {
++            ALOGE("Acer framebuffer metadata query failed: %s", strerror(errno));
++            close(drmFd);
++            return nullptr;
++        }
++        prime.handle = gem.handle;
++        // This 3.10 DRM PRIME ioctl accepts CLOEXEC only.
++        prime.flags = O_CLOEXEC;
++        prime.fd = -1;
++        int rc = ioctl(drmFd, DRM_IOCTL_PRIME_HANDLE_TO_FD, &prime);
++        int savedErrno = errno;
++        close(drmFd); // DMA-BUF fd independently retains the GEM object.
++        if (rc < 0) {
++            ALOGE("Acer PRIME export failed: %s", strerror(savedErrno));
++            return nullptr;
++        }
++        native_handle_t* transport = native_handle_create(1, 21);
++        if (!transport) {
++            close(prime.fd);
++            return nullptr;
++        }
++        transport->data[0] = prime.fd;
++        transport->data[1] = 0x41434552; // ACER transport envelope, not a vendor handle.
++        transport->data[2] = 2;
++        transport->data[3] = 14;
++        memcpy(&transport->data[4], legacy->data, 14 * sizeof(int));
++        transport->data[18] = fb.width;
++        transport->data[19] = fb.height;
++        transport->data[20] = fb.pitch;
++        transport->data[21] = legacy->data[8]; // Original DRM fourcc at byte 0x2c.
++        ALOGI("Acer PRIME exported name=%u fb=%u %ux%u pitch=%u fourcc=%x",
++              gem.name, fb.fb_id, fb.width, fb.height, fb.pitch, legacy->data[8]);
++        return transport;
++    }
++
++    bool mAcerPrime = false;
++    std::mutex mTransportMutex;
++    std::unordered_map<const native_handle_t*, const native_handle_t*> mTransport;
+     alloc_device_t* mDevice = nullptr;
+ };
+ 
+diff --git a/graphics/composer/2.1/default/service.cpp b/graphics/composer/2.1/default/service.cpp
+index 980f67851def31da2d509006e0d6359491f3f4ee..63864f64586d283b7ac056d5192b21227141b8fe 100644
+--- a/graphics/composer/2.1/default/service.cpp
++++ b/graphics/composer/2.1/default/service.cpp
+@@ -1,52 +1,45 @@
+ /*
+  * Copyright 2016 The Android Open Source Project
+- *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
++ * http://www.apache.org/licenses/LICENSE-2.0
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+-
+ #define LOG_TAG "android.hardware.graphics.composer@2.1-service"
+-
+ #include <sched.h>
+-
++#include <string.h>
++#include <sys/system_properties.h>
+ #include <android/hardware/graphics/composer/2.1/IComposer.h>
+-
+ #include <binder/ProcessState.h>
+ #include <hidl/LegacySupport.h>
+-
+ #ifdef ARCH_ARM_32
+ #include <hwbinder/ProcessState.h>
+ #endif
+-
+ using android::hardware::graphics::composer::V2_1::IComposer;
+ using android::hardware::defaultPassthroughServiceImplementation;
+-
+ int main() {
+ #ifdef ARCH_ARM_32
+     android::hardware::ProcessState::initWithMmapSize((size_t)(32768));
+ #endif
+-
+-    // the conventional HAL might start binder services
+     android::ProcessState::initWithDriver("/dev/vndbinder");
+     android::ProcessState::self()->setThreadPoolMaxThreadCount(4);
+     android::ProcessState::self()->startThreadPool();
+-
+-    // same as SF main thread
+     struct sched_param param = {0};
+     param.sched_priority = 2;
+-    if (sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK,
+-                &param) != 0) {
++    if (sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param) != 0) {
+         ALOGE("Couldn't set SCHED_FIFO: %d", errno);
+     }
+-
+-    return defaultPassthroughServiceImplementation<IComposer>(4);
++    char device[PROP_VALUE_MAX] = {};
++    __system_property_get("ro.product.device", device);
++    // Intel KitKat HWC retains its thread-owned display lock between
++    // prepare and set. Serializing HIDL on one thread preserves that contract,
++    // including control requests made between validation and presentation.
++    const bool acer = !strcmp(device, "ducati2fhd");
++    if (acer) ALOGI("Acer legacy HWC: single HIDL thread preserves prepare/set affinity");
++    return defaultPassthroughServiceImplementation<IComposer>(acer ? 1 : 4);
+ }
+diff --git a/graphics/composer/2.1/utils/hwc2on1adapter/Android.bp b/graphics/composer/2.1/utils/hwc2on1adapter/Android.bp
+index 420a1f6066d0b606724f8caa3cd7cd9f0baab237..0f1d7d69f7bdab0f7e837852b7e1c698ddddff2a 100644
+--- a/graphics/composer/2.1/utils/hwc2on1adapter/Android.bp
++++ b/graphics/composer/2.1/utils/hwc2on1adapter/Android.bp
+@@ -68,6 +68,7 @@ cc_library_shared {
+         "libcutils",
+         "liblog",
+         "libhardware",
++        "libsync",
+     ],
+ 
+     export_include_dirs: ["include"],
+diff --git a/graphics/composer/2.1/utils/hwc2on1adapter/HWC2On1Adapter.cpp b/graphics/composer/2.1/utils/hwc2on1adapter/HWC2On1Adapter.cpp
+index 6551a99a40d918a0075be25fd1c5e0a21d85300c..35190382e83c2ee2cd15fc7eee9bc5e14a5c6f6c 100644
+--- a/graphics/composer/2.1/utils/hwc2on1adapter/HWC2On1Adapter.cpp
++++ b/graphics/composer/2.1/utils/hwc2on1adapter/HWC2On1Adapter.cpp
+@@ -26,8 +26,17 @@
+ #include <inttypes.h>
+ 
+ #include <chrono>
++#include <condition_variable>
+ #include <cstdlib>
+ #include <sstream>
++#include <cstring>
++#include <unistd.h>
++#include <cutils/properties.h>
++#include <sync/sync.h>
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <drm/drm.h>
++#include <utils/Timers.h>
+ 
+ #include <hardware/hwcomposer.h>
+ #include <log/log.h>
+@@ -54,12 +63,49 @@ static constexpr Attribute ColorMode = static_cast<Attribute>(6);
+ 
+ namespace android {
+ 
++static bool dangolDrmVsyncEnabled(hwc_composer_device_1_t* device) {
++    char board[PROPERTY_VALUE_MAX];
++    property_get("ro.hardware", board, "");
++    return !std::strcmp(board, "dangol") &&
++            property_get_bool("debug.sf.dangol_legacy_post", false) &&
++            property_get_bool("debug.sf.dangol_drm_vsync", false) &&
++            (device->common.version & HARDWARE_API_VERSION_2_MAJ_MIN_MASK) ==
++            (HWC_DEVICE_API_VERSION_1_4 & HARDWARE_API_VERSION_2_MAJ_MIN_MASK);
++}
++
++static int64_t dangolVsyncPeriod() {
++    char period[PROPERTY_VALUE_MAX];
++    property_get("debug.sf.dangol_vsync_period", period, "23524000");
++    int64_t value = std::strtoll(period, nullptr, 10);
++    return value >= 10000000 && value <= 50000000 ? value : 23524000;
++}
++
+ class HWC2On1Adapter::Callbacks : public hwc_procs_t {
+     public:
+         explicit Callbacks(HWC2On1Adapter& adapter) : mAdapter(adapter) {
+             invalidate = &invalidateHook;
+             vsync = &vsyncHook;
+             hotplug = &hotplugHook;
++            char device[PROPERTY_VALUE_MAX] = {};
++            property_get("ro.product.device", device, "");
++            mAsyncVsync = !strcmp(device, "ducati2fhd") &&
++                    property_get_bool("debug.acer.async_vsync", true);
++            if (mAsyncVsync) {
++                mVsyncThread = std::thread(&Callbacks::vsyncLoop, this);
++                ALOGI("Acer DRM vsync callbacks dispatched off the DRM event thread");
++            }
++        }
++
++        ~Callbacks() { stopVsync(); }
++
++        void stopVsync() {
++            {
++                std::lock_guard<std::mutex> lock(mVsyncMutex);
++                mVsyncStopping = true;
++                mQueuedVsync.clear();
++            }
++            mVsyncCondition.notify_one();
++            if (mVsyncThread.joinable()) mVsyncThread.join();
+         }
+ 
+         static void invalidateHook(const hwc_procs_t* procs) {
+@@ -70,7 +116,20 @@ class HWC2On1Adapter::Callbacks : public hwc_procs_t {
+         static void vsyncHook(const hwc_procs_t* procs, int display,
+                 int64_t timestamp) {
+             auto callbacks = static_cast<const Callbacks*>(procs);
+-            callbacks->mAdapter.hwc1Vsync(display, timestamp);
++            if (!callbacks->mAsyncVsync) {
++                callbacks->mAdapter.hwc1Vsync(display, timestamp);
++                return;
++            }
++            // Intel processes flip completion on this same DRM event thread.
++            // Never block it on adapter state held across native HWC set().
++            // Coalesce only real vsync timestamps; no synthetic fences/events.
++            if (display < 0 || display >= HWC_NUM_DISPLAY_TYPES) return;
++            {
++                std::lock_guard<std::mutex> lock(callbacks->mVsyncMutex);
++                if (callbacks->mVsyncStopping) return;
++                callbacks->mQueuedVsync[display] = timestamp;
++            }
++            callbacks->mVsyncCondition.notify_one();
+         }
+ 
+         static void hotplugHook(const hwc_procs_t* procs, int display,
+@@ -80,7 +139,28 @@ class HWC2On1Adapter::Callbacks : public hwc_procs_t {
+         }
+ 
+     private:
++        void vsyncLoop() {
++            for (;;) {
++                std::map<int, int64_t> pending;
++                {
++                    std::unique_lock<std::mutex> lock(mVsyncMutex);
++                    mVsyncCondition.wait(lock, [this] {
++                        return mVsyncStopping || !mQueuedVsync.empty();
++                    });
++                    if (mVsyncStopping) return;
++                    pending.swap(mQueuedVsync);
++                }
++                for (const auto& event : pending)
++                    mAdapter.hwc1Vsync(event.first, event.second);
++            }
++        }
+         HWC2On1Adapter& mAdapter;
++        bool mAsyncVsync = false;
++        mutable std::mutex mVsyncMutex;
++        mutable std::condition_variable mVsyncCondition;
++        mutable std::map<int, int64_t> mQueuedVsync;
++        mutable bool mVsyncStopping = false;
++        std::thread mVsyncThread;
+ };
+ 
+ static int closeHook(hw_device_t* /*device*/)
+@@ -112,13 +192,64 @@ HWC2On1Adapter::HWC2On1Adapter(hwc_composer_device_1_t* hwc1Device)
+     getCapabilities = getCapabilitiesHook;
+     getFunction = getFunctionHook;
+     populateCapabilities();
+-    populatePrimary();
++    // Intel BayTrail creates its displays synchronously in registerProcs.
++    // Querying before that call returns -ENOENT and an invalid zero period.
++    char acerDevice[PROPERTY_VALUE_MAX] = {};
++    property_get("ro.product.device", acerDevice, "");
++    const bool acerRegisterFirst = !strcmp(acerDevice, "ducati2fhd");
++    if (!acerRegisterFirst) populatePrimary();
+     mHwc1Device->registerProcs(mHwc1Device,
+             static_cast<const hwc_procs_t*>(mHwc1Callbacks.get()));
++    if (acerRegisterFirst) {
++        populatePrimary();
++        ALOGI("Acer primary configuration queried after Intel callback registration");
++    }
++    if (dangolDrmVsyncEnabled(mHwc1Device)) {
++        mDangolDrmFd = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
++        if (mDangolDrmFd >= 0) {
++            mDangolVsyncPeriod = dangolVsyncPeriod();
++            mHwc1Device->eventControl(mHwc1Device, HWC_DISPLAY_PRIMARY, HWC_EVENT_VSYNC, 0);
++            mDangolVsyncRunning.store(true);
++            mDangolVsyncThread = std::thread(&HWC2On1Adapter::dangolVsyncLoop, this);
++        } else {
++            ALOGE("Dangol DRM open failed; native HWC vsync remains in use");
++        }
++    }
+ }
+ 
+ HWC2On1Adapter::~HWC2On1Adapter() {
++    mDangolVsyncRunning.store(false);
++    if (mDangolVsyncThread.joinable()) mDangolVsyncThread.join();
++    if (mDangolDrmFd >= 0) close(mDangolDrmFd);
+     hwc_close_1(mHwc1Device);
++    // Native callback producers have stopped; join while adapter state lives.
++    mHwc1Callbacks->stopVsync();
++}
++
++void HWC2On1Adapter::dangolVsyncLoop() {
++    while (mDangolVsyncRunning.load()) {
++        if (!mDangolVsyncEnabled.load()) {
++            std::this_thread::sleep_for(20ms);
++            continue;
++        }
++        union drm_wait_vblank v = {};
++        v.request.type = _DRM_VBLANK_RELATIVE;
++        v.request.sequence = 1;
++        int result = ioctl(mDangolDrmFd, DRM_IOCTL_WAIT_VBLANK, &v);
++        int64_t stamp = 0;
++        if (result == 0) {
++            stamp = int64_t(v.reply.tval_sec) * 1000000000LL +
++                    int64_t(v.reply.tval_usec) * 1000LL;
++        }
++        if (result != 0 || stamp <= 0) {
++            // CRTC is not active before the first post or during DPMS off.
++            // Keep retrying after a timer tick instead of permanently giving up.
++            std::this_thread::sleep_for(std::chrono::nanoseconds(mDangolVsyncPeriod));
++            stamp = systemTime(SYSTEM_TIME_MONOTONIC);
++        }
++        if (mDangolVsyncRunning.load() && mDangolVsyncEnabled.load())
++            hwc1Vsync(HWC_DISPLAY_PRIMARY, stamp);
++    }
+ }
+ 
+ void HWC2On1Adapter::doGetCapabilities(uint32_t* outCount,
+@@ -959,8 +1090,13 @@ Error HWC2On1Adapter::Display::setVsyncEnabled(Vsync enable) {
+ 
+     std::unique_lock<std::recursive_mutex> lock(mStateMutex);
+ 
+-    int error = mDevice.mHwc1Device->eventControl(mDevice.mHwc1Device,
+-            mHwc1Id, HWC_EVENT_VSYNC, enable == Vsync::Enable);
++    int error = 0;
++    if (mHwc1Id == HWC_DISPLAY_PRIMARY && mDevice.mDangolDrmFd >= 0) {
++        mDevice.mDangolVsyncEnabled.store(enable == Vsync::Enable);
++    } else {
++        error = mDevice.mHwc1Device->eventControl(mDevice.mHwc1Device,
++                mHwc1Id, HWC_EVENT_VSYNC, enable == Vsync::Enable);
++    }
+     ALOGE_IF(error != 0, "setVsyncEnabled: Failed to set vsync on HWC1 (%d)",
+             error);
+ 
+@@ -1144,6 +1280,8 @@ void HWC2On1Adapter::Display::populateConfigs() {
+ 
+         newConfig->setAttribute(Attribute::VsyncPeriod,
+                 values[attributeMap[HWC_DISPLAY_VSYNC_PERIOD]]);
++        if (mHwc1Id == HWC_DISPLAY_PRIMARY && dangolDrmVsyncEnabled(mDevice.mHwc1Device))
++            newConfig->setAttribute(Attribute::VsyncPeriod, static_cast<int32_t>(dangolVsyncPeriod()));
+         newConfig->setAttribute(Attribute::Width,
+                 values[attributeMap[HWC_DISPLAY_WIDTH]]);
+         newConfig->setAttribute(Attribute::Height,
+@@ -1313,6 +1451,9 @@ void HWC2On1Adapter::Display::addRetireFence(int fenceFd) {
+ void HWC2On1Adapter::Display::addReleaseFences(
+         const hwc_display_contents_1_t& hwcContents) {
+     std::unique_lock<std::recursive_mutex> lock(mStateMutex);
++    char acerDevice[PROPERTY_VALUE_MAX] = {};
++    property_get("ro.product.device", acerDevice, "");
++    const bool acer = !std::strcmp(acerDevice, "ducati2fhd");
+ 
+     size_t numLayers = hwcContents.numHwLayers;
+     for (size_t hwc1Id = 0; hwc1Id < numLayers; ++hwc1Id) {
+@@ -1332,6 +1473,18 @@ void HWC2On1Adapter::Display::addReleaseFences(
+         }
+ 
+         Layer& layer = *mHwc1LayerMap[hwc1Id];
++        if (acer && receivedLayer.compositionType == HWC_FRAMEBUFFER) {
++            // HWC1 must not return a release fence for a layer it does not read
++            // (hwcomposer.h). Intel's legacy HAL returns its next-frame timeline
++            // even for FRAMEBUFFER layers. Merging that into the GPU's client
++            // release fence creates a GPU-submit/present circular dependency.
++            // Keep the DeferredFence queue: an older OVERLAY fence still guards
++            // the previous buffer. SF separately adds the real GPU client-target
++            // acquire fence for client composition; never synthesize completion.
++            if (receivedLayer.releaseFenceFd >= 0) close(receivedLayer.releaseFenceFd);
++            layer.addReleaseFence(-1);
++            continue;
++        }
+         ALOGV("Adding release fence %d to layer %" PRIu64,
+                 receivedLayer.releaseFenceFd, layer.getId());
+         layer.addReleaseFence(receivedLayer.releaseFenceFd);
+@@ -2509,6 +2662,43 @@ Error HWC2On1Adapter::setAllDisplays() {
+                 mHwc1Contents.data());
+     }
+ 
++    // Dangol HWC1.4 set() does not submit the framebuffer. Its reserved slot
++    // is a board-specific ABI, not a generic HWC extension.
++    char dangolBoard[PROPERTY_VALUE_MAX];
++    property_get("ro.hardware", dangolBoard, "");
++    if (!std::strcmp(dangolBoard, "dangol") &&
++            property_get_bool("debug.sf.dangol_legacy_post", false) &&
++            (mHwc1Device->common.version & HARDWARE_API_VERSION_2_MAJ_MIN_MASK) ==
++                (HWC_DEVICE_API_VERSION_1_4 & HARDWARE_API_VERSION_2_MAJ_MIN_MASK) &&
++            mHwc1Device->reserved_proc[0] && !mHwc1Contents.empty() &&
++            mHwc1Contents[HWC_DISPLAY_PRIMARY]) {
++        using DangolPost = int (*)(hwc_composer_device_1_t*, int, hwc_layer_1_t*);
++        auto post = reinterpret_cast<DangolPost>(mHwc1Device->reserved_proc[0]);
++        auto* primary = mHwc1Contents[HWC_DISPLAY_PRIMARY];
++        for (size_t i = 0; i < primary->numHwLayers; ++i) {
++            auto& layer = primary->hwLayers[i];
++            if (layer.compositionType != HWC_FRAMEBUFFER_TARGET || !layer.handle) continue;
++            if (layer.acquireFenceFd >= 0) {
++                int fence = layer.acquireFenceFd;
++                layer.acquireFenceFd = -1;
++                int ready = sync_wait(fence, 3000);
++                close(fence);
++                if (ready) {
++                    ALOGE("Dangol framebuffer acquire fence wait failed");
++                    return Error::NoResources;
++                }
++            }
++            int result = post(mHwc1Device, HWC_DISPLAY_PRIMARY, &layer);
++            if (result) {
++                ALOGE("Dangol legacy framebuffer post failed: %d", result);
++                return Error::NoResources;
++            }
++            // Present/release fencing still requires a real kernel completion path.
++            // Do not manufacture an already-signaled fence to hide that gap.
++            break;
++        }
++    }
++
+     // Add retire and release fences
+     for (size_t hwc1Id = 0; hwc1Id < mHwc1Contents.size(); ++hwc1Id) {
+         if (mHwc1Contents[hwc1Id] == nullptr) {
+diff --git a/graphics/composer/2.1/utils/hwc2on1adapter/include/hwc2on1adapter/HWC2On1Adapter.h b/graphics/composer/2.1/utils/hwc2on1adapter/include/hwc2on1adapter/HWC2On1Adapter.h
+index 3badfce078a8f348202bbb01d8040d42ba2991a6..524db79626e43e9a4ebacf77466c3a941ad52bbc 100644
+--- a/graphics/composer/2.1/utils/hwc2on1adapter/include/hwc2on1adapter/HWC2On1Adapter.h
++++ b/graphics/composer/2.1/utils/hwc2on1adapter/include/hwc2on1adapter/HWC2On1Adapter.h
+@@ -33,6 +33,7 @@
+ #include <unordered_map>
+ #include <unordered_set>
+ #include <vector>
++#include <thread>
+ 
+ struct hwc_composer_device_1;
+ struct hwc_display_contents_1;
+@@ -731,6 +732,13 @@ private:
+     // Map HWC1 display type (HWC_DISPLAY_PRIMARY, HWC_DISPLAY_EXTERNAL,
+     // HWC_DISPLAY_VIRTUAL) to Display IDs generated by HWC2on1Adapter objects.
+     std::unordered_map<int, hwc2_display_t> mHwc1DisplayMap;
++    // Board-specific vblank source; disabled on all other HWC implementations.
++    int mDangolDrmFd = -1;
++    int64_t mDangolVsyncPeriod = 23524000;
++    std::atomic<bool> mDangolVsyncRunning{false};
++    std::atomic<bool> mDangolVsyncEnabled{false};
++    std::thread mDangolVsyncThread;
++    void dangolVsyncLoop();
+ };
+ 
+ } // namespace android
+diff --git a/graphics/mapper/2.0/utils/passthrough/include/mapper-passthrough/2.0/Gralloc0Hal.h b/graphics/mapper/2.0/utils/passthrough/include/mapper-passthrough/2.0/Gralloc0Hal.h
+index 7369ac759322009c5f4ddda4b62d57eba9d8b3f4..fc2e2776042935fbc0e3f8cdf56504cc9ad25cfd 100644
+--- a/graphics/mapper/2.0/utils/passthrough/include/mapper-passthrough/2.0/Gralloc0Hal.h
++++ b/graphics/mapper/2.0/utils/passthrough/include/mapper-passthrough/2.0/Gralloc0Hal.h
+@@ -20,6 +20,14 @@
+ #endif
+ 
+ #include <inttypes.h>
++#include <cstring>
++#include <fcntl.h>
++#include <sys/ioctl.h>
++#include <unistd.h>
++#include <drm/drm.h>
++#include <drm/drm_mode.h>
++#include <mutex>
++#include <unordered_map>
+ 
+ #include <hardware/gralloc.h>
+ #include <log/log.h>
+@@ -75,18 +83,84 @@ class Gralloc0HalImpl : public Hal {
+ 
+     Error importBuffer(const native_handle_t* rawHandle,
+                        native_handle_t** outBufferHandle) override {
+-        native_handle_t* bufferHandle = native_handle_clone(rawHandle);
++        // HIDL owns the DMA-BUF fd until this call returns. Register the
++        // original Intel handle while that reference is still alive; the
++        // vendor's imported GEM BO then owns its own kernel reference.
++        const bool acerEnvelope = mModule->common.name &&
++                !strcmp(mModule->common.name, "Acer isolated Intel gralloc bridge") &&
++                rawHandle && rawHandle->version == sizeof(native_handle_t) &&
++                rawHandle->numFds == 1 && rawHandle->numInts == 21 &&
++                rawHandle->data[1] == 0x41434552 && rawHandle->data[2] == 2 &&
++                rawHandle->data[3] == 14 && rawHandle->data[0] >= 0;
++        native_handle_t* bufferHandle = acerEnvelope ? native_handle_create(0, 14) :
++                                                       native_handle_clone(rawHandle);
+         if (!bufferHandle) {
+             return Error::NO_RESOURCES;
+         }
++        int importedDrmFd = -1;
++        uint32_t ownedFb = 0;
++        if (acerEnvelope) {
++            memcpy(bufferHandle->data, &rawHandle->data[4], 14 * sizeof(int));
++            importedDrmFd = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
++            struct drm_prime_handle prime = {};
++            prime.fd = rawHandle->data[0];
++            struct drm_gem_flink flink = {};
++            bool imported = importedDrmFd >= 0 &&
++                    ioctl(importedDrmFd, DRM_IOCTL_PRIME_FD_TO_HANDLE, &prime) == 0;
++            if (imported) {
++                flink.handle = prime.handle;
++                imported = ioctl(importedDrmFd, DRM_IOCTL_GEM_FLINK, &flink) == 0;
++            }
++            if (!imported) {
++                ALOGE("Acer PRIME import/flink failed: %s", strerror(errno));
++                if (importedDrmFd >= 0) close(importedDrmFd);
++                native_handle_delete(bufferHandle);
++                return Error::BAD_BUFFER;
++            }
++            // GEM global names can be removed when the last handle is freed,
++            // even though the DMA-BUF retains the object. Obtain a current name
++            // and keep this temporary GEM handle until vendor registration.
++            bufferHandle->data[6] = static_cast<int>(flink.name);
++            if (bufferHandle->data[7]) {
++                struct drm_mode_fb_cmd2 fb = {};
++                fb.width = rawHandle->data[18];
++                fb.height = rawHandle->data[19];
++                fb.pitches[0] = rawHandle->data[20];
++                fb.pixel_format = rawHandle->data[21];
++                fb.handles[0] = prime.handle;
++                if (!fb.width || !fb.height || !fb.pitches[0] ||
++                    ioctl(importedDrmFd, DRM_IOCTL_MODE_ADDFB2, &fb) < 0) {
++                    ALOGE("Acer consumer framebuffer creation failed: %s", strerror(errno));
++                    close(importedDrmFd);
++                    native_handle_delete(bufferHandle);
++                    return Error::BAD_BUFFER;
++                }
++                ownedFb = fb.fb_id;
++                ALOGI("Acer framebuffer recreated old=%d new=%u %ux%u pitch=%u fourcc=%x",
++                      bufferHandle->data[7], ownedFb, fb.width, fb.height,
++                      fb.pitches[0], fb.pixel_format);
++                bufferHandle->data[7] = ownedFb;
++            }
++        }
+ 
+-        if (mModule->registerBuffer(mModule, bufferHandle)) {
++        int registerResult = mModule->registerBuffer(mModule, bufferHandle);
++        if (registerResult) {
++            if (importedDrmFd >= 0) close(importedDrmFd);
+             native_handle_close(bufferHandle);
+             native_handle_delete(bufferHandle);
+             return Error::BAD_BUFFER;
+         }
++        if (ownedFb) {
++            // Keep the owning DRM file open for this imported buffer's whole
++            // lifetime. Closing it immediately also destroys its FB IDs.
++            std::lock_guard<std::mutex> lock(mFramebufferMutex);
++            mFramebuffers.emplace(bufferHandle, FramebufferOwner{importedDrmFd, ownedFb});
++        } else if (importedDrmFd >= 0) {
++            close(importedDrmFd);
++        }
+ 
+         *outBufferHandle = bufferHandle;
++        if (acerEnvelope) ALOGI("Acer PRIME imported legacy name=%d", bufferHandle->data[6]);
+ 
+         return Error::NONE;
+     }
+@@ -96,6 +170,17 @@ class Gralloc0HalImpl : public Hal {
+             return Error::BAD_BUFFER;
+         }
+ 
++        {
++            std::lock_guard<std::mutex> lock(mFramebufferMutex);
++            auto owner = mFramebuffers.find(bufferHandle);
++            if (owner != mFramebuffers.end()) {
++                uint32_t fb = owner->second.id;
++                ioctl(owner->second.fd, DRM_IOCTL_MODE_RMFB, &fb);
++                close(owner->second.fd);
++                mFramebuffers.erase(owner);
++            }
++        }
++
+         native_handle_close(bufferHandle);
+         native_handle_delete(bufferHandle);
+         return Error::NONE;
+@@ -199,6 +284,9 @@ class Gralloc0HalImpl : public Hal {
+     }
+ 
+     const gralloc_module_t* mModule = nullptr;
++    struct FramebufferOwner { int fd; uint32_t id; };
++    std::mutex mFramebufferMutex;
++    std::unordered_map<const native_handle_t*, FramebufferOwner> mFramebuffers;
+     uint8_t mMinor = 0;
+ };
+ 

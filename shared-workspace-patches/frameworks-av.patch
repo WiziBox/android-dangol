@@ -1,0 +1,88 @@
+# MODIFIED by the WiziBox Android 9 port project; changes licensed Apache-2.0.
+# Original notices retained in ../third-party-notices; see PROVENANCE.md.
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index 014dfa9b88108fb646b551a7263208e34a02ebe1..65077c0129af84df2a24d19b79c02daae558b4ef 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -1946,7 +1946,12 @@ status_t ACodec::configureCodec(
+                 return err;
+             }
+ 
+-            err = setPortMode(kPortIndexOutput, IOMX::kPortModeDynamicANWBuffer);
++            // Legacy NX adaptive output keeps stale crop geometry across size changes.
++            // Use preset native buffers and let clients recreate on resolution changes.
++            const bool legacyNxDecoder =
++                    !strncmp(mComponentName.c_str(), "OMX.NX.", 7);
++            err = legacyNxDecoder ? ERROR_UNSUPPORTED :
++                    setPortMode(kPortIndexOutput, IOMX::kPortModeDynamicANWBuffer);
+             if (err != OK) {
+                 // if adaptive playback has been requested, try JB fallback
+                 // NOTE: THIS FALLBACK MECHANISM WILL BE REMOVED DUE TO ITS
+@@ -1971,7 +1976,7 @@ status_t ACodec::configureCodec(
+                 }
+ 
+                 int32_t maxWidth = 0, maxHeight = 0;
+-                if (canDoAdaptivePlayback &&
++                if (canDoAdaptivePlayback && !legacyNxDecoder &&
+                         msg->findInt32("max-width", &maxWidth) &&
+                         msg->findInt32("max-height", &maxHeight)) {
+                     ALOGV("[%s] prepareForAdaptivePlayback(%dx%d)",
+@@ -4949,6 +4954,21 @@ status_t ACodec::getPortFormat(OMX_U32 portIndex, sp<AMessage> &notify) {
+                             rect.nHeight = videoDef->nFrameHeight;
+                         }
+ 
++                        // Legacy NX can report the previous frame's origin crop.
++                        // Keep small alignment padding and non-origin crops intact.
++                        if (!strncmp(mComponentName.c_str(), "OMX.NX.", 7) &&
++                                !rect.nLeft && !rect.nTop && rect.nWidth && rect.nHeight &&
++                                rect.nWidth <= videoDef->nFrameWidth &&
++                                rect.nHeight <= videoDef->nFrameHeight &&
++                                (videoDef->nFrameWidth - rect.nWidth >= 16 ||
++                                 videoDef->nFrameHeight - rect.nHeight >= 16)) {
++                            ALOGW("[%s] correcting stale NX crop %ux%u to frame %ux%u",
++                                    mComponentName.c_str(), rect.nWidth, rect.nHeight,
++                                    videoDef->nFrameWidth, videoDef->nFrameHeight);
++                            rect.nWidth = videoDef->nFrameWidth;
++                            rect.nHeight = videoDef->nFrameHeight;
++                        }
++
+                         if (rect.nLeft < 0 || rect.nTop < 0 ||
+                             rect.nWidth == 0 || rect.nHeight == 0 ||
+                             rect.nLeft + rect.nWidth > videoDef->nFrameWidth ||
+@@ -7683,6 +7703,12 @@ status_t ACodec::setVendorParameters(const sp<AMessage> &params) {
+ }
+ 
+ status_t ACodec::getVendorParameters(OMX_U32 portIndex, sp<AMessage> &format) {
++    // Pre-Oreo NX OMX returns empty success for every vendor-extension index.
++    // Enumeration would never terminate. Restrict the workaround to NX.
++    if (!strncmp(mComponentName.c_str(), "OMX.NX.", 7)) {
++        mVendorExtensionsStatus = kExtensionsNone;
++        return OK;
++    }
+     constexpr char prefix[] = "vendor.";
+     constexpr size_t prefixLength = sizeof(prefix) - 1;
+     char key[sizeof(OMX_CONFIG_ANDROID_VENDOR_EXTENSIONTYPE::cName) +
+@@ -8460,7 +8486,7 @@ status_t ACodec::queryCapabilities(
+         }
+     }
+ 
+-    if (isVideo && !isEncoder) {
++    if (isVideo && !isEncoder && strncmp(name, "OMX.NX.", 7)) {
+         native_handle_t *sidebandHandle = NULL;
+         if (omxNode->configureVideoTunnelMode(
+                 kPortIndexOutput, OMX_TRUE, 0, &sidebandHandle) == OK) {
+diff --git a/media/libstagefright/colorconversion/SoftwareRenderer.cpp b/media/libstagefright/colorconversion/SoftwareRenderer.cpp
+index 657a05b420eae148c7d4f73da31c8b95da8f6fbd..3e5693da8a0674b2fe4f1601e6327434da4448fd 100644
+--- a/media/libstagefright/colorconversion/SoftwareRenderer.cpp
++++ b/media/libstagefright/colorconversion/SoftwareRenderer.cpp
+@@ -120,7 +120,9 @@ void SoftwareRenderer::resetFormatIfChanged(
+     size_t bufHeight = mCropHeight;
+ 
+     // hardware has YUV12 and RGBA8888 support, so convert known formats
+-    {
++    // Opt-in workaround for Dangol's legacy Mali planar YV12 texture path.
++    if (!(mColorFormat == OMX_COLOR_FormatYUV420Planar &&
++            property_get_bool("debug.media.dangol_rgb", false))) {
+         switch (mColorFormat) {
+             case OMX_COLOR_FormatYUV420Planar:
+             case OMX_COLOR_FormatYUV420SemiPlanar:

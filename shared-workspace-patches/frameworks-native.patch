@@ -1,0 +1,127 @@
+# MODIFIED by the WiziBox Android 9 port project; changes licensed Apache-2.0.
+# Original notices retained in ../third-party-notices; see PROVENANCE.md.
+diff --git a/libs/ui/Gralloc2.cpp b/libs/ui/Gralloc2.cpp
+index 918251f9dc4b283d4f57073a3c99e53c4866a7c3..3b63114c8ce3da14df27563ecdac36b9faf11f9d 100644
+--- a/libs/ui/Gralloc2.cpp
++++ b/libs/ui/Gralloc2.cpp
+@@ -348,6 +348,7 @@ Error Allocator::allocate(BufferDescriptor descriptor, uint32_t count,
+                 const auto& tmpBuffers) {
+                 error = tmpError;
+                 if (tmpError != Error::NONE) {
++                    ALOGE("ACER_ALLOC_CALLBACK error=%d", static_cast<int>(tmpError));
+                     return;
+                 }
+ 
+@@ -356,6 +357,7 @@ Error Allocator::allocate(BufferDescriptor descriptor, uint32_t count,
+                     error = mMapper.importBuffer(tmpBuffers[i],
+                             &outBufferHandles[i]);
+                     if (error != Error::NONE) {
++                        ALOGE("ACER_ALLOC_IMPORT error=%d", static_cast<int>(error));
+                         for (uint32_t j = 0; j < i; j++) {
+                             mMapper.freeBuffer(outBufferHandles[j]);
+                             outBufferHandles[j] = nullptr;
+@@ -370,6 +372,10 @@ Error Allocator::allocate(BufferDescriptor descriptor, uint32_t count,
+     // make sure the kernel driver sees BC_FREE_BUFFER and closes the fds now
+     hardware::IPCThreadState::self()->flushCommands();
+ 
++    if (!ret.isOk()) {
++        ALOGE("ACER_ALLOC_TRANSPORT %s", ret.description().c_str());
++    }
++
+     return (ret.isOk()) ? error : kTransactionError;
+ }
+ 
+diff --git a/services/inputflinger/InputReader.cpp b/services/inputflinger/InputReader.cpp
+index 59337bb3b02e54456723efa9b3dc29f81126dfba..07eb492757ad3e417e02377c3bebbbdd6ffdbb71 100644
+--- a/services/inputflinger/InputReader.cpp
++++ b/services/inputflinger/InputReader.cpp
+@@ -43,6 +43,7 @@
+ #define DEBUG_STYLUS_FUSION 0
+ 
+ #include "InputReader.h"
++#include <cutils/properties.h>
+ 
+ #include <errno.h>
+ #include <inttypes.h>
+@@ -3560,6 +3561,14 @@ void TouchInputMapper::configureSurface(nsecs_t when, bool* outResetNeeded) {
+     } else {
+         newViewport.setNonDisplayViewport(rawWidth, rawHeight);
+     }
++    // TAB4418's primary display is installed at 270 degrees, but its
++    // Goodix sensor still reports the portrait panel's native coordinates.
++    if (getDeviceName() == String8("goodix_ts") && mParameters.hasAssociatedDisplay) {
++        const int installRotation = property_get_int32("debug.input.dangol_install_rotation", 0);
++        if (installRotation >= 0 && installRotation <= 3) {
++            newViewport.orientation = (newViewport.orientation + installRotation) % 4;
++        }
++    }
+     bool viewportChanged = mViewport != newViewport;
+     if (viewportChanged) {
+         mViewport = newViewport;
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index f513b9fd7f4bb931bb1b60b2805769b59d463618..93c0c9ed5c242ec221235dc9921fc9268c7415da 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -249,7 +249,9 @@ SurfaceFlinger::SurfaceFlinger(SurfaceFlinger::SkipInitializationTag)
+         mBootStage(BootStage::BOOTLOADER),
+         mDebugRegion(0),
+         mDebugDDMS(0),
+-        mDebugDisableHWC(0),
++        // Diagnostic only: avoid an initial overlay -> client transition.
++        // Preserve real acquire/retire fences and the default production path.
++        mDebugDisableHWC(property_get_bool("debug.acer.client_from_start", false)),
+         mDebugDisableTransformHint(0),
+         mDebugInSwapBuffers(0),
+         mLastSwapBufferTime(0),
+@@ -294,6 +296,17 @@ SurfaceFlinger::SurfaceFlinger() : SurfaceFlinger(SkipInitialization) {
+     maxFrameBufferAcquiredBuffers = getInt64< ISurfaceFlingerConfigs,
+             &ISurfaceFlingerConfigs::maxFrameBufferAcquiredBuffers>(2);
+ 
++    // Intel's KitKat EGL queues the current framebuffer and dequeues the
++    // next one inside eglSwapBuffers, before this thread advances the consumer.
++    // Two total slots leave one ACQUIRED and one QUEUED, causing self-deadlock.
++    // Preserve buffer ownership/fences; reserve the third slot only on Acer.
++    char acerDevice[PROPERTY_VALUE_MAX] = {};
++    property_get("ro.product.device", acerDevice, "");
++    if (!strcmp(acerDevice, "ducati2fhd") && maxFrameBufferAcquiredBuffers < 3) {
++        maxFrameBufferAcquiredBuffers = 3;
++        ALOGI("Acer Intel EGL: three framebuffer slots for queue-before-dequeue");
++    }
++
+     hasWideColorDisplay =
+             getBool<ISurfaceFlingerConfigs, &ISurfaceFlingerConfigs::hasWideColorDisplay>(false);
+ 
+@@ -1559,7 +1572,19 @@ void SurfaceFlinger::onMessageReceived(int32_t what) {
+     ATRACE_CALL();
+     switch (what) {
+         case MessageQueue::INVALIDATE: {
+-            bool frameMissed = !mHadClientComposition &&
++            // HWC1 retire fences can signal only after the NEXT presentation.
++            // The HWC2 adapter explicitly declares these timestamps unreliable.
++            // On this legacy Intel device, using that fence to prevent the next
++            // presentation creates a circular wait. Keep all acquire/release
++            // synchronization intact; do not treat a retire fence as present.
++            static const bool acerLegacyDisplay = [] {
++                char device[PROPERTY_VALUE_MAX] = {};
++                property_get("ro.product.device", device, "");
++                return !strcmp(device, "ducati2fhd");
++            }();
++            const bool unreliableLegacyPresent = acerLegacyDisplay &&
++                    getHwComposer().hasCapability(HWC2::Capability::PresentFenceIsNotReliable);
++            bool frameMissed = !unreliableLegacyPresent && !mHadClientComposition &&
+                     mPreviousPresentFence != Fence::NO_FENCE &&
+                     (mPreviousPresentFence->getSignalTime() ==
+                             Fence::SIGNAL_TIME_PENDING);
+@@ -2580,6 +2605,12 @@ void SurfaceFlinger::processDisplayChangesLocked() {
+ 
+                     hwcId = state.type;
+                     dispSurface = new FramebufferSurface(*getBE().mHwc, hwcId, bqConsumer);
++                    // Old Mali EGL may enqueue ahead while drawing. A synchronous
++                    // framebuffer queue can block SF before it consumes the queue.
++                    if (property_get_bool("debug.sf.dangol_async_fb", false)) {
++                        const status_t asyncStatus = bqProducer->setAsyncMode(true);
++                        ALOGI("Dangol async framebuffer queue: %d", asyncStatus);
++                    }
+                     producer = bqProducer;
+                 }
+ 

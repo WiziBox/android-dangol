@@ -1,0 +1,55 @@
+# MODIFIED by the WiziBox Android 9 port project; changes licensed Apache-2.0.
+# Original notices retained in ../third-party-notices; see PROVENANCE.md.
+diff --git a/libsuspend/autosuspend_wakeup_count.cpp b/libsuspend/autosuspend_wakeup_count.cpp
+index 27c862957f3e3250a46c740c0e8d34de3c4f9a7a..90ab54c648c7e738f6efad263ff602fd1b3d5a7c 100644
+--- a/libsuspend/autosuspend_wakeup_count.cpp
++++ b/libsuspend/autosuspend_wakeup_count.cpp
+@@ -30,6 +30,7 @@
+ 
+ #include <android-base/file.h>
+ #include <android-base/logging.h>
++#include <android-base/properties.h>
+ #include <android-base/strings.h>
+ 
+ #include "autosuspend_ops.h"
+@@ -52,6 +53,7 @@ static int sleep_time = BASE_SLEEP_TIME;
+ static constexpr char sys_power_state[] = "/sys/power/state";
+ static constexpr char sys_power_wakeup_count[] = "/sys/power/wakeup_count";
+ static bool autosuspend_is_init = false;
++static bool acer_legacy_earlysuspend = false;
+ 
+ static void update_sleep_time(bool success) {
+     if (success) {
+@@ -157,6 +159,13 @@ static int autosuspend_init(void) {
+     }
+ 
+     LOG(VERBOSE) << "autosuspend_init success";
++    // Opt-in diagnostic for this kernel only: its state_store(mem) starts
++    // asynchronous earlysuspend and needs state_store(on) to run late_resume.
++    acer_legacy_earlysuspend =
++        android::base::GetProperty("ro.product.device", "") == "ducati2fhd" &&
++        android::base::GetBoolProperty("debug.acer.legacy_earlysuspend", false) &&
++        access("/sys/module/earlysuspend/parameters/debug_mask", F_OK) == 0;
++    LOG(INFO) << "Acer legacy earlysuspend compatibility: " << acer_legacy_earlysuspend;
+     autosuspend_is_init = true;
+     return 0;
+ 
+@@ -200,6 +209,18 @@ static int autosuspend_wakeup_count_disable(void) {
+         PLOG(ERROR) << "error changing semaphore";
+     }
+ 
++    if (ret == 0 && acer_legacy_earlysuspend && !WriteStringToFd("on", state_fd)) {
++        // Retain the public enabled state on failure so a caller can retry.
++        // Return the acquired semaphore token; never claim resume succeeded.
++        int saved_errno = errno;
++        PLOG(ERROR) << "failed to request Acer legacy late_resume";
++        if (sem_post(&suspend_lockout) < 0) {
++            PLOG(ERROR) << "error restoring suspend semaphore after resume failure";
++        }
++        errno = saved_errno;
++        return -1;
++    }
++
+     LOG(VERBOSE) << "autosuspend_wakeup_count_disable done";
+ 
+     return ret;

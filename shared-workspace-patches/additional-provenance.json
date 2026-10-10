@@ -1,0 +1,110 @@
+[
+  {
+    "project": "external/skia",
+    "upstream": "https://github.com/LineageOS/android_external_skia",
+    "base_commit": "bfdc5ebd1697b06f1ececcaf9c748d00b738b2fa",
+    "patch_sha256": "2a498f1bafa4bb6b3bda2ca8d4f85e6f3a89f89361cf61b6e312f4d4f2927b41",
+    "files": [
+      {
+        "path": "src/gpu/gl/GrGLCaps.cpp",
+        "license": "BSD-3-Clause (Skia)",
+        "base_file_sha256": "80913201cc2c0ff6ef654e778dd41483abc65f7f69f634b6b9c505ae6bc2972c"
+      }
+    ]
+  },
+  {
+    "project": "frameworks/opt/net/wifi",
+    "upstream": "https://github.com/LineageOS/android_frameworks_opt_net_wifi",
+    "base_commit": "934ca88f867996977ed25366f8abdc25584e46bb",
+    "patch_sha256": "edee1fcac95d272bf60544ae64266934440c8c347c5c858bf7ce139cf9d6a3ff",
+    "files": [
+      {
+        "path": "service/java/com/android/server/wifi/WifiApConfigStore.java",
+        "license": "Apache-2.0",
+        "base_file_sha256": "19084db90e6181da352e2e71131834c77f2b5c9578248fb825d5714f7d56d125"
+      }
+    ]
+  },
+  {
+    "project": "hardware/broadcom/wlan",
+    "upstream": "https://github.com/LineageOS/android_hardware_broadcom_wlan",
+    "base_commit": "96108864e101415d8f385d47e5bdc0dc7121eaa9",
+    "patch_sha256": "56c55af25beeb4988e08b4d3b4a780b56fea0d8f86a5c80141f2ffdd9bd0d947",
+    "files": [
+      {
+        "path": "bcmdhd/wifi_hal/Android.mk",
+        "license": "Apache-2.0",
+        "base_file_sha256": "4bdcb8566113af5a4991d9adca1ae9b2729ac9c164d355f40504e9494f079634"
+      },
+      {
+        "path": "bcmdhd/wifi_hal/wifi_hal.cpp",
+        "license": "Apache-2.0",
+        "base_file_sha256": "c78922ee106555bffd3eae02ffd8d1f3866dd7b73dd04e1ffeb4672d59791e9e"
+      }
+    ]
+  },
+  {
+    "project": "hardware/interfaces",
+    "upstream": "https://github.com/LineageOS/android_hardware_interfaces",
+    "base_commit": "247f33da70920c5d79765faab67ee3191133723c",
+    "patch_sha256": "97c653e046b9f3182093f86b426e97461183e3a842f20f327078db1a36c66546",
+    "files": [
+      {
+        "path": "graphics/allocator/2.0/utils/passthrough/include/allocator-passthrough/2.0/Gralloc0Hal.h",
+        "license": "Apache-2.0",
+        "base_file_sha256": "4ca695a343ea56c9f56eab6aaf795c5f8ea3b6068d40d30cb1e602a4eb623ee1"
+      },
+      {
+        "path": "graphics/composer/2.1/default/service.cpp",
+        "license": "Apache-2.0",
+        "base_file_sha256": "22b9e839270225edac5281d8b28b02d4eb5c8cddbd8f677825391d22d971af7b"
+      },
+      {
+        "path": "graphics/composer/2.1/utils/hwc2on1adapter/Android.bp",
+        "license": "Apache-2.0",
+        "base_file_sha256": "96616faa00c33578f1e074a702f8cd247fa83fb37c0a0fdc630c4b917c6b9630"
+      },
+      {
+        "path": "graphics/composer/2.1/utils/hwc2on1adapter/HWC2On1Adapter.cpp",
+        "license": "Apache-2.0",
+        "base_file_sha256": "c48d38a34f301d08fdf4a6100674eebb1ef8bab8e4e9707190534133299cf8ff"
+      },
+      {
+        "path": "graphics/composer/2.1/utils/hwc2on1adapter/include/hwc2on1adapter/HWC2On1Adapter.h",
+        "license": "Apache-2.0",
+        "base_file_sha256": "3d8e0373137f1c4f80e599c8bc1ad2289cea7d22b5329015fde9d8e4a911f8ff"
+      },
+      {
+        "path": "graphics/mapper/2.0/utils/passthrough/include/mapper-passthrough/2.0/Gralloc0Hal.h",
+        "license": "Apache-2.0",
+        "base_file_sha256": "390ac53c6b365559456f5099692bdd19ceb31cd09dc97787578c189c681b6fbe"
+      }
+    ]
+  },
+  {
+    "project": "packages/providers/TelephonyProvider",
+    "upstream": "https://github.com/LineageOS/android_packages_providers_TelephonyProvider",
+    "base_commit": "3d07f3a1821c0953d156206e288bb484a0c0f399",
+    "patch_sha256": "836fb2227d5729fbb6c405464a48bdae35ad9117a6e895598ad436203273158c",
+    "files": [
+      {
+        "path": "src/com/android/providers/telephony/TelephonyProvider.java",
+        "license": "Apache-2.0",
+        "base_file_sha256": "0028d9bf071aba86f464228a08805768343053b4897b63cbd6d2d652cb64cd4e"
+      }
+    ]
+  },
+  {
+    "project": "system/libhwbinder",
+    "upstream": "https://github.com/LineageOS/android_system_libhwbinder",
+    "base_commit": "5baf0b1db573f8da519d80afdfcb25042d84b8b5",
+    "patch_sha256": "606bb5cf4bd6ec866e2259606c1d86d88b934e35481634467a354fef4c593f95",
+    "files": [
+      {
+        "path": "Parcel.cpp",
+        "license": "Apache-2.0",
+        "base_file_sha256": "754e06d7e464dbf28f7028eadc27cf00e7951bd2e73d0fa8c2e43c13e2799032"
+      }
+    ]
+  }
+]

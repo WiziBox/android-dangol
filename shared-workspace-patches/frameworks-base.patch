@@ -1,0 +1,127 @@
+# MODIFIED by the WiziBox Android 9 port project; changes licensed Apache-2.0.
+# Original notices retained in ../third-party-notices; see PROVENANCE.md.
+diff --git a/core/jni/fd_utils.cpp b/core/jni/fd_utils.cpp
+index 4ff1cacd95392ad3727b2730557f787926135b7c..d3c4c4c1b3e9f35e3c03eda3760661374b504536 100644
+--- a/core/jni/fd_utils.cpp
++++ b/core/jni/fd_utils.cpp
+@@ -28,6 +28,7 @@
+ 
+ #include <android-base/file.h>
+ #include <android-base/logging.h>
++#include <android-base/properties.h>
+ #include <android-base/stringprintf.h>
+ #include <android-base/strings.h>
+ 
+@@ -288,7 +289,23 @@ bool FileDescriptorInfo::ReopenOrDetach(std::string* error_msg) const {
+   // NOTE: This might happen if the file was unlinked after being opened.
+   // It's a common pattern in the case of temporary files and the like but
+   // we should not allow such usage from the zygote.
+-  const int new_fd = TEMP_FAILURE_RETRY(open(file_path.c_str(), open_flags));
++  int new_fd = TEMP_FAILURE_RETRY(open(file_path.c_str(), open_flags));
++
++  // This legacy board mounts debugfs privately. An isolated WebView renderer
++  // must not inherit privileged tracing access or die because optional tracing
++  // cannot be reopened after dropping its uid. Detach ONLY this tracing fd to
++  // /dev/null; all other descriptor errors keep their original fatal handling.
++  const uid_t app_id = getuid() % 100000;
++  if (new_fd == -1 && errno == EACCES &&
++      file_path == "/sys/kernel/debug/tracing/trace_marker" &&
++      app_id >= 99000 && app_id <= 99999 &&
++      android::base::GetProperty("ro.product.device", "") == "ducati2fhd") {
++    new_fd = TEMP_FAILURE_RETRY(open("/dev/null", open_flags));
++    if (new_fd != -1) {
++      LOG(INFO) << "Acer: detached inaccessible optional trace marker for isolated uid "
++                << getuid();
++    }
++  }
+ 
+   if (new_fd == -1) {
+     *error_msg = android::base::StringPrintf("Failed open(%s, %i): %s",
+diff --git a/libs/hwui/Properties.cpp b/libs/hwui/Properties.cpp
+index 0a6c45beedf95311d7380e945d13e8c29fc5ecef..11b09519f5edaacd3699cf491f06eade0522f752 100644
+--- a/libs/hwui/Properties.cpp
++++ b/libs/hwui/Properties.cpp
+@@ -20,6 +20,10 @@
+ 
+ #include <algorithm>
+ #include <cstdlib>
++#include <cerrno>
++#include <cstring>
++#include <fcntl.h>
++#include <unistd.h>
+ 
+ #include <cutils/compiler.h>
+ #include <cutils/properties.h>
+@@ -191,6 +195,23 @@ RenderPipelineType Properties::getRenderPipelineType() {
+     }
+     char prop[PROPERTY_VALUE_MAX];
+     property_get(PROPERTY_RENDERER, prop, "skiagl");
++    // BayTrail's legacy driver fails to draw SystemUI icons with SkiaGL.
++    // Keep other applications on their normal renderer; do not change a
++    // global property during process startup (that races other app launches).
++    char device[PROPERTY_VALUE_MAX] = {};
++    property_get("ro.product.device", device, "");
++    if (!strcmp(device, "ducati2fhd")) {
++        char process[64] = {};
++        int fd = open("/proc/self/cmdline", O_RDONLY | O_CLOEXEC);
++        if (fd >= 0) {
++            ssize_t length = TEMP_FAILURE_RETRY(read(fd, process, sizeof(process) - 1));
++            close(fd);
++            if (length > 0 && !strcmp(process, "com.android.systemui")) {
++                strcpy(prop, "opengl");
++                ALOGI("Acer SystemUI-only legacy GL renderer");
++            }
++        }
++    }
+     if (!strcmp(prop, "skiagl")) {
+         ALOGD("Skia GL Pipeline");
+         sRenderPipelineType = RenderPipelineType::SkiaGL;
+diff --git a/services/core/java/com/android/server/display/ColorFade.java b/services/core/java/com/android/server/display/ColorFade.java
+index 33525fdc52d2a52269a7ccd86488d2ad89f6be48..ba22471cee689f69078a2772a022009a6029c478 100644
+--- a/services/core/java/com/android/server/display/ColorFade.java
++++ b/services/core/java/com/android/server/display/ColorFade.java
+@@ -476,7 +476,15 @@ final class ColorFade {
+             try {
+                 SurfaceControl.screenshot(SurfaceControl.getBuiltInDisplay(
+                         SurfaceControl.BUILT_IN_DISPLAY_ID_MAIN), s);
+-                st.updateTexImage();
++                try {
++                    st.updateTexImage();
++                } catch (RuntimeException ex) {
++                    // A failed optional fade texture must not kill the power
++                    // manager thread. Return through the existing failure and
++                    // resource cleanup paths instead of claiming GL success.
++                    Slog.e(TAG, "Failed to update color fade screenshot texture", ex);
++                    return false;
++                }
+                 st.getTransformMatrix(mTexMatrix);
+             } finally {
+                 s.release();
+diff --git a/services/core/java/com/android/server/net/NetworkPolicyManagerService.java b/services/core/java/com/android/server/net/NetworkPolicyManagerService.java
+index 02a3b6f391a63d6a98ee52398aa8fd4a4ce40b9a..6c0ced40bfa0b972e2debed61be24952445a86d3 100644
+--- a/services/core/java/com/android/server/net/NetworkPolicyManagerService.java
++++ b/services/core/java/com/android/server/net/NetworkPolicyManagerService.java
+@@ -713,14 +713,20 @@ public class NetworkPolicyManagerService extends INetworkPolicyManager.Stub {
+         try {
+             // Boost thread's priority during system server init
+             Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
++            // Local callbacks (including package verification's temporary
++            // power whitelist) still run on kernels without bandwidth control.
++            // Resolve their dependencies before the unsupported-capability exit.
++            mUsageStats = LocalServices.getService(UsageStatsManagerInternal.class);
++            mNetworkStats = LocalServices.getService(NetworkStatsManagerInternal.class);
+             if (!isBandwidthControlEnabled()) {
+                 Slog.w(TAG, "bandwidth controls disabled, unable to enforce policy");
++                // This is an intentional unsupported-capability exit, not an
++                // initialization still in progress. Unblock systemReady without
++                // claiming policy enforcement or marking mSystemReady true.
++                initCompleteSignal.countDown();
+                 return;
+             }
+ 
+-            mUsageStats = LocalServices.getService(UsageStatsManagerInternal.class);
+-            mNetworkStats = LocalServices.getService(NetworkStatsManagerInternal.class);
+-
+             synchronized (mUidRulesFirstLock) {
+                 synchronized (mNetworkPoliciesSecondLock) {
+                     updatePowerSaveWhitelistUL();

@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "scope": "shared-development-tree",
+  "patches": [
+    {
+      "project": "frameworks/native",
+      "upstream": "https://github.com/LineageOS/android_frameworks_native",
+      "base_commit": "38be48f36da1acd812670fbecb75bffca9b4cd98",
+      "patch": "shared-workspace-patches/frameworks-native.patch",
+      "sha256": "28768eb5d937704bad8b84d8bbe1ab08dbb9244e89399ae22d88713a647fc5a6",
+      "modified_files": [
+        "libs/ui/Gralloc2.cpp",
+        "services/inputflinger/InputReader.cpp",
+        "services/surfaceflinger/SurfaceFlinger.cpp"
+      ]
+    },
+    {
+      "project": "frameworks/base",
+      "upstream": "https://github.com/LineageOS/android_frameworks_base",
+      "base_commit": "ea0de66d71ac88db42f26d9b63c9c1941aa097fc",
+      "patch": "shared-workspace-patches/frameworks-base.patch",
+      "sha256": "8c38ab71aaa3cc620274a72d2f5efc51877650ccc52063cccb4abc29ac958813",
+      "modified_files": [
+        "core/jni/fd_utils.cpp",
+        "libs/hwui/Properties.cpp",
+        "services/core/java/com/android/server/display/ColorFade.java",
+        "services/core/java/com/android/server/net/NetworkPolicyManagerService.java"
+      ]
+    },
+    {
+      "project": "frameworks/av",
+      "upstream": "https://github.com/LineageOS/android_frameworks_av",
+      "base_commit": "541d785e2b89cfbc60df0ecae0edff7977283351",
+      "patch": "shared-workspace-patches/frameworks-av.patch",
+      "sha256": "8a19c0231195abcf89ab82db6c3aa129021da5f5ff89ce7caf3b78ebc7fb8000",
+      "modified_files": [
+        "media/libstagefright/ACodec.cpp",
+        "media/libstagefright/colorconversion/SoftwareRenderer.cpp"
+      ]
+    },
+    {
+      "project": "system/core",
+      "upstream": "https://github.com/LineageOS/android_system_core",
+      "base_commit": "976019d07ad1c007043b78450857f428a1440f06",
+      "patch": "shared-workspace-patches/system-core.patch",
+      "sha256": "26f472da021e85781cb9f61e3018e2b01a8f51b58385efdb8937f5a3c9fdd9c9",
+      "modified_files": [
+        "libsuspend/autosuspend_wakeup_count.cpp"
+      ]
+    },
+    {
+      "project": "system/netd",
+      "upstream": "https://github.com/LineageOS/android_system_netd",
+      "base_commit": "02458b0a19ce2d3214a00f9779bd36868541b7ca",
+      "patch": "shared-workspace-patches/system-netd.patch",
+      "sha256": "210cf7fa5ee8f557f7b8120a727e510faa941f953f8224d4f029ab144f787976",
+      "modified_files": [
+        "server/TetherController.cpp"
+      ]
+    },
+    {
+      "project": "external/skia",
+      "upstream": "https://github.com/LineageOS/android_external_skia",
+      "base_commit": "bfdc5ebd1697b06f1ececcaf9c748d00b738b2fa",
+      "patch": "shared-workspace-patches/external-skia.patch",
+      "sha256": "2a498f1bafa4bb6b3bda2ca8d4f85e6f3a89f89361cf61b6e312f4d4f2927b41",
+      "modified_files": [
+        "src/gpu/gl/GrGLCaps.cpp"
+      ]
+    },
+    {
+      "project": "frameworks/opt/net/wifi",
+      "upstream": "https://github.com/LineageOS/android_frameworks_opt_net_wifi",
+      "base_commit": "934ca88f867996977ed25366f8abdc25584e46bb",
+      "patch": "shared-workspace-patches/frameworks-opt-net-wifi.patch",
+      "sha256": "edee1fcac95d272bf60544ae64266934440c8c347c5c858bf7ce139cf9d6a3ff",
+      "modified_files": [
+        "service/java/com/android/server/wifi/WifiApConfigStore.java"
+      ]
+    },
+    {
+      "project": "hardware/broadcom/wlan",
+      "upstream": "https://github.com/LineageOS/android_hardware_broadcom_wlan",
+      "base_commit": "96108864e101415d8f385d47e5bdc0dc7121eaa9",
+      "patch": "shared-workspace-patches/hardware-broadcom-wlan.patch",
+      "sha256": "56c55af25beeb4988e08b4d3b4a780b56fea0d8f86a5c80141f2ffdd9bd0d947",
+      "modified_files": [
+        "bcmdhd/wifi_hal/Android.mk",
+        "bcmdhd/wifi_hal/wifi_hal.cpp"
+      ]
+    },
+    {
+      "project": "hardware/interfaces",
+      "upstream": "https://github.com/LineageOS/android_hardware_interfaces",
+      "base_commit": "247f33da70920c5d79765faab67ee3191133723c",
+      "patch": "shared-workspace-patches/hardware-interfaces.patch",
+      "sha256": "97c653e046b9f3182093f86b426e97461183e3a842f20f327078db1a36c66546",
+      "modified_files": [
+        "graphics/allocator/2.0/utils/passthrough/include/allocator-passthrough/2.0/Gralloc0Hal.h",
+        "graphics/composer/2.1/default/service.cpp",
+        "graphics/composer/2.1/utils/hwc2on1adapter/Android.bp",
+        "graphics/composer/2.1/utils/hwc2on1adapter/HWC2On1Adapter.cpp",
+        "graphics/composer/2.1/utils/hwc2on1adapter/include/hwc2on1adapter/HWC2On1Adapter.h",
+        "graphics/mapper/2.0/utils/passthrough/include/mapper-passthrough/2.0/Gralloc0Hal.h"
+      ]
+    },
+    {
+      "project": "packages/providers/TelephonyProvider",
+      "upstream": "https://github.com/LineageOS/android_packages_providers_TelephonyProvider",
+      "base_commit": "3d07f3a1821c0953d156206e288bb484a0c0f399",
+      "patch": "shared-workspace-patches/packages-providers-TelephonyProvider.patch",
+      "sha256": "836fb2227d5729fbb6c405464a48bdae35ad9117a6e895598ad436203273158c",
+      "modified_files": [
+        "src/com/android/providers/telephony/TelephonyProvider.java"
+      ]
+    },
+    {
+      "project": "system/libhwbinder",
+      "upstream": "https://github.com/LineageOS/android_system_libhwbinder",
+      "base_commit": "5baf0b1db573f8da519d80afdfcb25042d84b8b5",
+      "patch": "shared-workspace-patches/system-libhwbinder.patch",
+      "sha256": "606bb5cf4bd6ec866e2259606c1d86d88b934e35481634467a354fef4c593f95",
+      "modified_files": [
+        "Parcel.cpp"
+      ]
+    }
+  ]
+}
