@@ -1,0 +1,22 @@
+# Defense in depth; publication still requires an explicit file review.
+*.img
+*.bin
+*.so
+*.ko
+*.apk
+*.zip
+*.partial
+*.log
+*.pem
+*.pk8
+*.p12
+*.jks
+*.keystore
+adbkey*
+adb_keys
+signing_key*
+.env*
+backup/
+downloads/
+out/
+proprietary/
