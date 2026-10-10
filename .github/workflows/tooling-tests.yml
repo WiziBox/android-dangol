@@ -1,0 +1,19 @@
+name: Publication tooling tests (not ROM build)
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  boot-audit:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified 2026-10-11
+        with:
+          persist-credentials: false
+      - name: Run parser and key-audit unit tests
+        run: python -m unittest discover -s tests -v

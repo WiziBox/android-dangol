@@ -20,3 +20,5 @@ backup/
 downloads/
 out/
 proprietary/
+__pycache__/
+*.pyc
