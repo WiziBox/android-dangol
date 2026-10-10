@@ -1,0 +1,9 @@
+# Device-source components
+
+`device/nexell/dangol/experimental/` supplies the source for the existing `hwcomposer.dangol_next` build dependency: 27 Nexell HWC files and five gralloc ABI headers. This is not the complete device tree or a standalone ROM build.
+
+The HWC baseline is [NexellCorp/android_hal_hwc](https://github.com/NexellCorp/android_hal_hwc) at `70f3ff136300d9b61f9c7a5fcacea684ad8496d5`; the gralloc-header baseline is [NexellCorp/android_hal_gralloc](https://github.com/NexellCorp/android_hal_gralloc) at `cec85e8c7c8f2fe6b5cd4a64f2c8f7285683767c`. The original Apache-2.0 headers are retained, including ARM and AOSP copyrights. Modified files carry a project modification notice. Original headers are also preserved under `third-party-notices/dangol-hwc.file-headers.txt`; file-level input/output hashes are recorded in `dangol-hwc-provenance.json`.
+
+Six files differ from the upstream baselines. The component contains queue lifetime/serialization, importer error handling, Android 9 ABI and display-commit work. Its presence is necessary to reproduce the existing product's package list; it is **not** authorization to enable this experimental HAL as the release display driver. The current product selects the separate legacy `dangol` driver. Experimental completion/fence behavior and device regression coverage must not be represented as production-proven.
+
+Installation into a fresh source workspace, the remaining device tree and verified vendor inputs will be handled by the complete build workflow. Do not overwrite an existing modified device tree with this directory manually.
