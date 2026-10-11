@@ -54,6 +54,30 @@ python3 tools/device_preflight.py --adb /path/to/adb --serial YOUR_DEVICE_SERIAL
 
 ## 비공개 환경의 오프라인 읽기 길이 검사
 
+앞 영역 백업만 있다면 환경을 먼저 별도 비공개 파일로 추출할 수 있습니다.
+
+```sh
+python3 tools/extract_boot_environment.py --preboot /private/your-device-backup/dangol-preboot.bin --preboot-sha256 YOUR_PRIVATE_PREBOOT_SHA256 --owner-boot /private/your-boot.img --output /private/owner-environment.bin
+```
+
+전체 앞 영역의 크기·예상 SHA-256, boot의 kernel/DTB 형식, 개발 기록의 고정
+환경 위치(3,015,168바이트)에서 16KiB 환경 CRC·지원 bootcmd를 검사합니다.
+이 위치는 자동 탐색한 값이 아니므로 다른 기기·배치를 지원한다고 해석하지 마세요.
+예상 해시는 새 ADB 백업의 비공개 owner-device-record preboot 항목이나 이동 전
+보존한 자기 원본 지문을 사용합니다. 기기 동일성·공장 원본을 인증하는 서명은
+아닙니다. boot 파일에 파티션 전체의 0 패딩이 있으면 실제 payload의 정렬된
+길이로 읽기 길이를 계산합니다.
+
+기본값은 출력 없는 검사이고 `--apply`를 추가하면 원본을 보존한 새 호스트 파일만
+만듭니다. 출력은 저장소 밖 비공개 경로여야 합니다. 환경은 여전히 MAC·일련번호를
+포함할 수 있으므로 출력 파일·전체 백업·그 지문은 업로드하지 마세요. 추출 성공은
+읽기 길이가 충분하다는 뜻이 아닙니다. report의 read_length_sufficient를 확인하고
+필요하면 아래 준비 도구를 사용하되 기기 기록은 별도 검토가 필요합니다.
+
+실제 보관한 2026-10-05 앞 영역 백업으로 추출·host readback·원본 불변 검사를
+통과했습니다. 그 백업은 수정 전 환경이라 새 승인키 제거 후보의 필요한 길이보다
+짧았고, 이를 그대로 기록하거나 부팅 시험하지 않았습니다.
+
 ```sh
 python3 tools/check_boot_environment.py --environment /private/owner-environment.bin --boot-image /private/new-boot.img
 ```
