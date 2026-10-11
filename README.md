@@ -14,7 +14,7 @@
 
 최종 목표는 이 저장소만으로 소스 준비·빌드·다운로드·설치·복구를 할 수 있는 완성된 배포본입니다. 현재 일부 검토된 소스와 실제 실행한 도구가 공개됐지만, 전체 빌드와 설치 가능한 최종 ROM은 아직 완성되지 않았습니다. 문서나 단위 테스트 통과만으로 최종본이라고 표시하지 않습니다.
 
-라이선스를 확인한 공유 작업 트리의 패치 11개 프로젝트, 커밋 고정 upstream manifest 및 일부 HWC 소스를 고지사항과 함께 공개했습니다. 나머지 기기·커널·vendor 입력과 전체 빌드 연결은 진행 중입니다. [라이선스 검토 결과](docs/LICENSE-REVIEW.ko.md), [공개 HWC 소스](source/README.md)와 [소스 준비 절차](manifests/README.md)를 참조하세요.
+라이선스를 확인한 공유 작업 트리의 패치 11개 프로젝트, 커밋 고정 upstream manifest, 기기 설정 16개 및 HWC 소스를 고지사항과 함께 공개했습니다. [기기 트리 배치](docs/DEVICE-SOURCES.ko.md), [소유자 입력 기반 빌드·부트 패키징](docs/BUILD.ko.md), [라이선스 검토 결과](docs/LICENSE-REVIEW.ko.md)와 [소스 준비 절차](manifests/README.md)를 참조하세요. 공개 빌드 경로의 전체 빌드 성공이나 설치·복구 완료를 주장하지 않습니다.
 
 [WebView 입력 다운로드·검증](docs/WEBVIEW-INPUT.md): 공식 서버에서 정확한 ARM 객체를 다운로드하고 크기·SHA256·APK 구조를 확인하는 도구를 제공합니다. Dangol에서는 `--abi arm`을 사용하며 Acer 검증 트리에 적용하지 마세요.
 

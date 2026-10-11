@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "device": "dangol",
+  "files": [
+    {
+      "path": "AndroidProducts.mk",
+      "bytes": 181,
+      "sha256": "c61b0aa90749a18007057ba538a6d51c649e8e9ce6a2334a64cb3bbca0f8151f",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "BoardConfig.mk",
+      "bytes": 1691,
+      "sha256": "9c897f69700f5622df0d0ed50cd2756996f9303a16ba8c9b1e934a92c112d736",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "dangol-wifi.rc",
+      "bytes": 823,
+      "sha256": "6a5ca5c28d78d29987e4c6a481b70a3586804b854f714c89ea6421ff3713c2b7",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "device.mk",
+      "bytes": 3049,
+      "sha256": "cd0473d1c78f4a8623c54d718c5bf0e78251d298a1eb79e6e07f55e386e3afbb",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "goodix_ts.idc",
+      "bytes": 169,
+      "sha256": "b00e88c58a78d1b7aeaf6ef3c38b7f6d4824dd38eb7ad544b568ce3f8752da45",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "lineage_dangol.mk",
+      "bytes": 711,
+      "sha256": "b65195554e949774f1ecc44b5f4f9e7b14b6a3cbb803b0e172266147084e3985",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "manifest.xml",
+      "bytes": 2780,
+      "sha256": "ae41a23e7d5dfc29ee2f3cafe24d0fdd8bb7596ccc42aecd53259d8fe5d3a101",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "media_codecs.xml",
+      "bytes": 712,
+      "sha256": "4884cab49ccd8f55a71e5db4bf095bf4a32634b10a67c78fc7b2e2c060d5574c",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml",
+      "bytes": 291,
+      "sha256": "8e56e9c481e239d5c6b0e8de9df8d73724ab108c557689ed4e857683854606be",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "rootdir/dangol-rotation.rc",
+      "bytes": 306,
+      "sha256": "686dfb437f54627c3b3c12cf41e3a2b636d631cdaf43bb39450ec7b49349f52b",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "rootdir/fstab.dangol",
+      "bytes": 813,
+      "sha256": "b9d4a8a598af3e91d396fbb1b0752ea773c4041e610733cd7cb198ed7982a1ee",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "rootdir/init.dangol.rc",
+      "bytes": 851,
+      "sha256": "6819ee69f11cf9b3c7c172e000e73777ef281b2a8c891fe3380fb6a1b251766e",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "rootdir/init.dangol.usb.rc",
+      "bytes": 1863,
+      "sha256": "f21e20e1fefef9ce6d864d6c464c63338a4deb61a802d0e5e42e70ba22af8c65",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "rootdir/init.recovery.dangol.rc",
+      "bytes": 1125,
+      "sha256": "f47c9d53ecfd9fa25b49afdd37eb3e15518466515ddf4c29709bc338056564f6",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "rootdir/ueventd.dangol.rc",
+      "bytes": 345,
+      "sha256": "5c8fb1c1d64833f60ac6b08e3fb53d9de0cb1899fa31b956d72c11c9b01a0703",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    },
+    {
+      "path": "wpa_supplicant.conf",
+      "bytes": 190,
+      "sha256": "b70322438a0aea57f5a23e5508038df66eb0b8c8d25db7f03808eaff8278b246",
+      "license": "Apache-2.0",
+      "origin": "project-authored configuration"
+    }
+  ],
+  "third_party_index": "dangol-hwc-provenance.json",
+  "binary_inputs_included": false
+}

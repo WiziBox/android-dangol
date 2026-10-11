@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Project boot-complete policy for the measured installation orientation.
+on property:sys.boot_completed=1
+    exec - system system -- /system/bin/settings put system accelerometer_rotation 0
+    exec - system system -- /system/bin/settings put system user_rotation 0

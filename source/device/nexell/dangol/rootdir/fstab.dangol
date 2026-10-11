@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Project mount policy from measured partition/device paths. No factory IDs.
+/dev/block/mmcblk0p1 /boot emmc defaults defaults
+/dev/block/mmcblk0p3 /system ext4 ro wait
+/dev/block/mmcblk0p6 /cache ext4 noatime,nosuid,nodev,errors=panic wait,check
+/dev/block/mmcblk0p7 /recovery emmc defaults defaults
+/dev/block/mmcblk0p8 /misc emmc defaults defaults
+/dev/block/mmcblk0p9 /data ext4 noatime,nosuid,nodev,errors=panic wait,check
+/devices/platform/c0000000.soc/c0062000.dw_mmc/mmc_host* auto auto defaults voldmanaged=sdcard1:auto,encryptable=userdata
+/devices/platform/c0000000.soc/c0030000.ehci/usb* auto auto defaults voldmanaged=usb:auto,encryptable=userdata
+/devices/platform/c0000000.soc/c0040000.dwc2otg/usb* auto auto defaults voldmanaged=usb:auto,encryptable=userdata

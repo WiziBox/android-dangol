@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Project registry; no adaptive-playback advertisement for measured NX crop issue. -->
+<MediaCodecs>
+    <Decoders>
+        <MediaCodec name="OMX.NX.VIDEO_DECODER.avc" type="video/avc">
+            <Limit name="size" min="32x32" max="1920x1088" />
+            <Limit name="alignment" value="2x2" />
+            <Limit name="block-size" value="16x16" />
+            <Limit name="bitrate" range="1-50000000" />
+        </MediaCodec>
+    </Decoders>
+    <Include href="media_codecs_google_audio.xml" />
+    <Include href="media_codecs_google_video.xml" />
+    <Include href="media_codecs_google_telephony.xml" />
+</MediaCodecs>

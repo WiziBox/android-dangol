@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Project defaults for the measured reverse-landscape installation. -->
+<resources>
+    <bool name="def_accelerometer_rotation">false</bool>
+    <integer name="def_user_rotation">0</integer>
+</resources>

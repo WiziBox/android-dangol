@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Measured legacy device nodes; broad GPU/ION access is a known security limit.
+/dev/mali 0666 system graphics
+/dev/ion 0666 system graphics
+/dev/video14 0660 system camera
+/dev/video15 0660 system camera
+/dev/nx-vpu 0660 system media
+/dev/nx-scaler 0660 system media
+/dev/nx-deinterlacer 0660 system media
