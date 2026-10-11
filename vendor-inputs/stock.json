@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "device": "dangol",
+  "redistribution_approved": false,
+  "scope": "owner stock Android 7.1.2 inputs, paired stock kernel only",
+  "files": [
+    {
+      "source": "lib/libstagefrighthw.so",
+      "bytes": 18012,
+      "sha256": "853e949df38804c7aa47b3beb37679b3c2ba2809d90ed75eac34e7e1c6af2ef9",
+      "install": "system/lib/libstagefrighthw.so"
+    },
+    {
+      "source": "lib/libNX_OMX_Base.so",
+      "bytes": 22108,
+      "sha256": "d16676f35237a8054834b298205021962a9fa2ae1460c79bc99f76e622312000",
+      "install": "system/lib/libNX_OMX_Base.so"
+    },
+    {
+      "source": "lib/libNX_OMX_Common.so",
+      "bytes": 18144,
+      "sha256": "ce29a95a3a359a19b7c83ef2fbab2402aecd680be8514b48ff84013131c62c1f",
+      "install": "system/lib/libNX_OMX_Common.so"
+    },
+    {
+      "source": "lib/libNX_OMX_Core.so",
+      "bytes": 18012,
+      "sha256": "4206256dca42120aedd33145dce63ec401e1ce3619d726026b0a2073301f1de1",
+      "install": "system/lib/libNX_OMX_Core.so"
+    },
+    {
+      "source": "lib/libNX_OMX_VIDEO_DECODER.so",
+      "bytes": 75372,
+      "sha256": "1a41958929ef08703c88e66c83c28e7ccce026564cc4098f1881b86ffc7997bb",
+      "install": "system/lib/libNX_OMX_VIDEO_DECODER.so"
+    },
+    {
+      "source": "lib/libNX_OMX_VIDEO_ENCODER.so",
+      "bytes": 30316,
+      "sha256": "44ca3a03381678e0ab02440ccf6aba13a08db0bf55d12a3059993d44771e56ca",
+      "install": "system/lib/libNX_OMX_VIDEO_ENCODER.so"
+    },
+    {
+      "source": "lib/libnx_csc.so",
+      "bytes": 18008,
+      "sha256": "3c5f993a72838777c450082e700dbb8fd86c5282a54b1a875ecefef02f704ad9",
+      "install": "system/lib/libnx_csc.so"
+    },
+    {
+      "source": "lib/libnx_scaler.so",
+      "bytes": 13912,
+      "sha256": "050ab1deb4f57743ecb219f8997b4f13087f2e3b7434f625b6e807765171fb9e",
+      "install": "system/lib/libnx_scaler.so"
+    },
+    {
+      "source": "lib/libnx_video_api.so",
+      "bytes": 34400,
+      "sha256": "e16d9c53f578983b049dbddcdb2c477a66b48c86ff6a80abfbfaf79a4b269dcd",
+      "install": "system/lib/libnx_video_api.so"
+    },
+    {
+      "source": "lib/egl/egl.cfg",
+      "bytes": 21,
+      "sha256": "89e124ecc5da28514b4f7f3a5986b6e09bbf00d5ea32beb4204e08761876b53b",
+      "install": "system/lib/egl/egl.cfg"
+    },
+    {
+      "source": "lib/egl/libGLES_mali.so",
+      "bytes": 1246360,
+      "sha256": "bd37fe69d2e12fc9d04bfb6658bc84334e0ed2001636465946f809f7f4f84224",
+      "install": "system/lib/egl/libGLES_mali.so"
+    },
+    {
+      "source": "lib/hw/gralloc.dangol.so",
+      "bytes": 26268,
+      "sha256": "79f999ca7503912ee1febe0545b24909c1be06212ff53f3d45d507afbf7bbcce",
+      "install": "system/lib/hw/gralloc.dangol.so"
+    },
+    {
+      "source": "lib/hw/hwcomposer.dangol.so",
+      "bytes": 75492,
+      "sha256": "90213a5dcfbd1c58059de06d390f30980711c539c7a4463c5e4a3cca5aacd884",
+      "install": "system/lib/hw/hwcomposer.dangol.so"
+    },
+    {
+      "source": "lib/hw/memtrack.dangol.so",
+      "bytes": 14052,
+      "sha256": "a6d746ee38af9eab3e76f7d60792193555e68f3c53080a6a4046c2e258d3a5b6",
+      "install": "system/lib/hw/memtrack.dangol.so"
+    },
+    {
+      "source": "lib/hw/audio.primary.dangol.so",
+      "bytes": 34740,
+      "sha256": "27e8d56ac8c7436678a1148e4b69c2d2c2c64cfff6c0345b8a4d7f1c8e243679",
+      "install": "system/lib/hw/audio.primary.dangol.so"
+    },
+    {
+      "source": "lib/hw/lights.dangol.so",
+      "bytes": 14048,
+      "sha256": "52f3a573d5e909d0e673fed09f1e7d27e3aeab2590a2b9189a4731d7f0fd7bff",
+      "install": "system/lib/hw/lights.dangol.so"
+    },
+    {
+      "source": "lib/hw/power.default.so",
+      "bytes": 14072,
+      "sha256": "a95c7e81dc71f6b76b3c68f3d6ba646f82b514102f4ff3b872a200ffd6036895",
+      "install": "system/lib/hw/power.default.so"
+    },
+    {
+      "source": "vendor/lib/libbt-vendor.so",
+      "bytes": 30620,
+      "sha256": "7858d022294369ce611a96899ea1ac8c40425162a0524a4e5628decd74624707",
+      "install": "system/vendor/lib/libbt-vendor.so"
+    },
+    {
+      "source": "vendor/firmware/fw_bcm43438a1.bin",
+      "bytes": 375348,
+      "sha256": "e831de2226fe77fe028e155560dc5af0b9658f8d06c992ebb28b40717b541967",
+      "install": "system/vendor/firmware/fw_bcm43438a1.bin"
+    },
+    {
+      "source": "vendor/firmware/fw_bcm43438a1_apsta.bin",
+      "bytes": 375348,
+      "sha256": "e831de2226fe77fe028e155560dc5af0b9658f8d06c992ebb28b40717b541967",
+      "install": "system/vendor/firmware/fw_bcm43438a1_apsta.bin"
+    },
+    {
+      "source": "vendor/firmware/config_ap6212.txt",
+      "bytes": 88,
+      "sha256": "0443efcc4fd6d1e0e1fa47e99d9e1bfe6980de26753b30e82371a1629c128f27",
+      "install": "system/vendor/firmware/config_ap6212.txt"
+    },
+    {
+      "source": "vendor/firmware/BCM43438A1.hcd",
+      "bytes": 33376,
+      "sha256": "d396912aa4efa7e0ea93dc6b63b1088619b59676ab53404d14fe79f5c71a5da0",
+      "install": "system/vendor/firmware/BCM43438A1.hcd"
+    },
+    {
+      "source": "lib/modules/bcmdhd.ko",
+      "bytes": 12747856,
+      "sha256": "e9a18525f880c9701dcd99d7a8a351ecebe49017f1405ed775aba9f993ab4e6a",
+      "install": "system/lib/modules/bcmdhd.ko"
+    },
+    {
+      "source": "etc/audio_policy.conf",
+      "bytes": 3363,
+      "sha256": "cafb8ca7468ea2ff3b399bf0b3e429575394ebea597f3e6c6776c2aa4e6d9cff",
+      "install": "system/etc/audio_policy.conf"
+    },
+    {
+      "source": "etc/mixer_paths.xml",
+      "bytes": 1786,
+      "sha256": "7db9bc60cef121999f299bb3df096ed2912e8eceec4952edfad16fd681d414e5",
+      "install": "system/etc/mixer_paths.xml"
+    }
+  ],
+  "owner_calibration": "vendor/firmware/nvram_ap6212.txt"
+}

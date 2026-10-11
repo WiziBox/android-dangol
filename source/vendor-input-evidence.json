@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "device": "dangol",
+  "checked_date": "2026-10-11",
+  "reference": "owner stock Android 7.1.2 raw ext4 system backup",
+  "development_vendor_inputs_compared": 23,
+  "development_vendor_inputs_matching_stock": 23,
+  "wifi_module_matches_stock": true,
+  "public_metadata_entries": 25,
+  "private_calibration_entries": 1,
+  "calibration_contents_or_fingerprint_published": false,
+  "actual_extract_stock_run": "passed",
+  "actual_import_vendor_dry_run": "passed",
+  "actual_import_vendor_apply_new_private_directory": "passed",
+  "unit_tests_windows": 58,
+  "unit_tests_linux": 58,
+  "device_io": false,
+  "full_rom_build_completed_by_this_workflow": false,
+  "redistribution_approved": false,
+  "scope": "owner-only input preparation, not complete ROM or kernel source compliance"
+}
