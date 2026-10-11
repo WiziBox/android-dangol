@@ -1,6 +1,6 @@
 # 자기 기기의 읽기 전용 ADB 백업
 
-`backup_device.py`는 새 PC의 비공개 폴더로 6개 파티션을 직접 읽는 도구입니다.
+`backup_device.py`는 새 PC의 비공개 폴더로 6개 파티션과 파티션 앞 영역을 직접 읽는 도구입니다.
 Python 3와 ADB가 필요하고 기기에는 기존 root ADB·지원되는 sysfs/fstab 및
 `sha256sum`, `dd` 명령이 있어야 합니다. root 활성화·재부팅·마운트 변경·기기
 기록은 하지 않습니다. system 등 대상 파티션이 rw로 마운트되어 있으면 거부합니다.
@@ -30,8 +30,17 @@ Linux 폴더 0700·파일 0600 설정은 Windows ACL을 대신하지 않습니�
 python3 tools/verify_backup.py --backup-dir /private/new-dangol-backup --verify-private-receipt /private/new-dangol-backup/backup-receipt.json
 ```
 
-백업 범위는 boot/p2/system/p5/recovery/misc입니다. userdata·cache·eMMC boot 영역·
-파티션 앞 부트로더·환경은 포함하지 않습니다. 현재 기기에 수정 ROM이 설치되어
+백업 범위는 boot/p2/system/p5/recovery/misc 및 사용자 eMMC 앞 4,915,200바이트입니다.
+사전 점검의 실제 p1 시작 섹터가 9,600인지 확인한 뒤 해당 앞 영역만 읽습니다.
+새 비공개 `dangol-preboot.bin`에 저장하고 전후 기기 해시·호스트 크기/해시 및
+전체 파티션 백업 이후 해시를 확인합니다. `owner-device-record.json`의 preboot
+항목에 지문을 저장하지만 기존 6개 파일용 receipt의 형식은 바꾸지 않습니다.
+`verify_backup.py`는 여전히 6개 파티션만 검사하고 preboot는 별도입니다.
+
+이 앞 영역에는 부트로더·파티션 표·U-Boot 환경·고유 정보가 포함될 수 있으므로
+절대 공개하거나 다른 기기에 복사하지 마세요. 환경 위치·CRC·명령과 복원 방법을
+검증한 것은 아니며 whole-disk raw 기록 명령은 제공하지 않습니다. userdata·cache·
+별도 mmcblk0boot0/boot1·RPMB는 포함하지 않습니다. 현재 기기에 수정 ROM이 설치되어
 있으면 그 상태의 백업이며 공장 원본이 아닙니다. 기존 순정 백업은 별도로 보존하세요.
 이 백업은 완전한 공장 복원 세트나 검증된 실기 복구 성공을 뜻하지 않습니다.
 

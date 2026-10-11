@@ -13,6 +13,28 @@ from verify_backup import PARTITIONS, inventory
 
 BLOCKS = {'dangol-boot.img': 1, 'dangol-p2.img': 2, 'dangol-system.img': 3,
           'dangol-p5.img': 5, 'dangol-recovery.img': 7, 'dangol-misc.img': 8}
+PREBOOT_BYTES = 4915200
+PREBOOT_READ = 'dd if=/dev/block/mmcblk0 bs=512 count=9600'
+
+
+def capture_preboot(read, capture, output):
+    def checksum():
+        result = read(PREBOOT_READ + ' 2>/dev/null | sha256sum').strip()
+        match = re.fullmatch(r'([0-9a-f]{64})\s+\*?-', result)
+        if not match:
+            raise ValueError('unsupported preboot hash response')
+        return match[1]
+    before = checksum()
+    path = output / 'dangol-preboot.bin'
+    with path.open('xb') as stream:
+        path.chmod(0o600)
+        capture(PREBOOT_READ, stream)
+    if path.stat().st_size != PREBOOT_BYTES:
+        raise ValueError('short preboot backup')
+    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    if before != actual or checksum() != actual:
+        raise ValueError('preboot changed or capture differs')
+    return {'bytes': PREBOOT_BYTES, 'sha256': actual}
 
 
 def require_read_only_mounts(text):
@@ -49,9 +71,10 @@ def backup(read, capture, output, serial, apply=False):
         return {'dry_run': True, 'partition_files_planned': 6, 'device_writes': False,
                 'backup_created': False, 'restore_proven': False}
     import shutil
-    if shutil.disk_usage(output.parent).free < sum(PARTITIONS.values()) + 16777216:
+    if shutil.disk_usage(output.parent).free < sum(PARTITIONS.values()) + PREBOOT_BYTES + 16777216:
         raise ValueError('insufficient host space')
     output.mkdir(mode=0o700)
+    preboot = capture_preboot(read, capture, output)
     rows = {}
     for name, number in BLOCKS.items():
         block = '/dev/block/mmcblk0p%d' % number
@@ -75,10 +98,16 @@ def backup(read, capture, output, serial, apply=False):
     require_read_only_mounts(read('cat /proc/self/mountinfo'))
     if inventory(output) != rows:
         raise ValueError('final host inventory differs')
+    final_preboot_hash = read(PREBOOT_READ + ' 2>/dev/null | sha256sum').strip()
+    if not re.fullmatch(preboot['sha256'] + r'\s+\*?-', final_preboot_hash):
+        raise ValueError('preboot changed after partition backup')
+    preboot_path = output / 'dangol-preboot.bin'
+    if preboot_path.stat().st_size != PREBOOT_BYTES or hashlib.sha256(preboot_path.read_bytes()).hexdigest() != preboot['sha256']:
+        raise ValueError('host preboot changed after capture')
     records = {
         'backup-receipt.json': {'schema': 1, 'device': 'dangol', 'files': rows},
         'owner-device-record.json': {'schema': 1, 'device': 'dangol', 'serial': serial,
-                                    'files': rows, 'factory_original_proven': False,
+                                    'files': rows, 'preboot': preboot, 'factory_original_proven': False,
                                     'whole_disk_backup': False, 'restore_proven': False},
     }
     for name, record in records.items():
@@ -88,7 +117,7 @@ def backup(read, capture, output, serial, apply=False):
             json.dump(record, stream, indent=2)
     return {'dry_run': False, 'partition_files_verified': 6, 'backup_created': True,
             'device_writes': False, 'private_serial_not_printed': True,
-            'whole_disk_backup': False, 'restore_proven': False}
+            'preboot_backup_verified': True, 'whole_disk_backup': False, 'restore_proven': False}
 
 
 def main():
