@@ -48,6 +48,28 @@ python3 tools/check_boot_environment.py --environment /private/owner-environment
 이는 환경 백업의 검사 결과일 뿐 현재 기기 환경·RAM 배치·부팅 성공의 증거가
 아닙니다. 수정·기기 기록·환경 자동 탐색은 하지 않습니다.
 
+## 자기 환경의 새 비공개 후보 만들기
+
+```sh
+python3 tools/prepare_boot_environment.py --environment /private/owner-environment.bin --boot-image /private/new-boot.img --output /private/new-environment.bin
+```
+
+기본값은 dry-run입니다. `--apply`를 추가하면 **호스트의 새 파일만** 생성합니다.
+기기 기록·환경 위치 탐색·재부팅은 하지 않습니다. 출력은 공개 저장소 밖에 두어야
+하고 기존 파일을 덮어쓰지 않습니다. 다른 공개 폴더에도 넣지 마세요. Linux 파일
+권한은 0600이며 Windows에서는 별도로 비공개 ACL을 유지해야 합니다.
+
+읽기 길이가 부족할 때만 필요한 섹터 수로 늘립니다. 이미 충분하면 원본 바이트를
+그대로 복사하며 길이를 줄이지 않습니다. 지원된 bootcmd의 해당 숫자와 CRC 외에
+모든 바이트를 유지하고 출력 readback·원본 불변을 확인합니다. 숫자의 문자열
+길이가 달라져 환경 재배치가 필요하면 거부합니다. 실패한 새 파일은 자동 삭제하지
+않습니다. 환경은 여전히 개인 식별값을 포함할 수 있으므로 **업로드하지 마세요**.
+
+2026-10-11 실제 원본 환경과 승인키 제거 boot 후보로 새 비공개 환경을 만들고
+host readback 검사를 통과했습니다. 이 후보를 실기에 기록하거나 부팅하지는
+않았습니다. CRC 통과·충분한 길이는 파티션 경계·RAM 안전성·boot 내용이나 복구
+가능성을 증명하지 않으므로 설치 허가로 해석하지 마세요.
+
 ## recovery 이미지 형식
 
 개발 기기에서 원본 mmcblk0p7은 67,108,864바이트 ext4 파일시스템이었으며
