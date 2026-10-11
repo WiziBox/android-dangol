@@ -17,3 +17,5 @@ jobs:
           persist-credentials: false
       - name: Run parser and key-audit unit tests
         run: python -m unittest discover -s tests -v
+      - name: Reject tracked private keys and owner binaries
+        run: python tools/check_publication_inputs.py
