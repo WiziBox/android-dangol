@@ -1,6 +1,6 @@
 # Provenance, licensing and modification notice
 
-These are **modified** upstream sources distributed as textual patches, not unmodified upstream releases. Changes were made during the WiziBox dangol/Acer Android 9 development project. Apache-file patch changes are distributed under Apache-2.0; the Skia patch retains BSD-3-Clause. Original copyrights and applicable notices remain in force. See `../LICENSES/` and `../third-party-notices/`.
+These are **modified** upstream sources distributed as textual patches, not unmodified upstream releases. Changes were made during the WiziBox Android 9 development project. Apache-file patch changes are distributed under Apache-2.0; the Skia patch retains BSD-3-Clause. Original copyrights and applicable notices remain in force. See `../LICENSES/` and `../third-party-notices/`.
 
 | Patch | Upstream repository | Base commit |
 |---|---|---|
@@ -12,7 +12,7 @@ These are **modified** upstream sources distributed as textual patches, not unmo
 
 ## Modified files and purposes
 
-- frameworks/native: `libs/ui/Gralloc2.cpp` (allocation diagnostics), `services/inputflinger/InputReader.cpp` (dangol touch rotation), `services/surfaceflinger/SurfaceFlinger.cpp` (legacy display compatibility and client composition)
+- frameworks/native: `libs/ui/Gralloc2.cpp` (allocation diagnostics), `services/inputflinger/InputReader.cpp` (legacy touch rotation), `services/surfaceflinger/SurfaceFlinger.cpp` (legacy display compatibility and client composition)
 - frameworks/base: `core/jni/fd_utils.cpp` (isolated-process optional trace access), `libs/hwui/Properties.cpp` (SystemUI renderer selection), `services/core/java/com/android/server/display/ColorFade.java` (legacy display capture guard), `services/core/java/com/android/server/net/NetworkPolicyManagerService.java` (legacy network compatibility)
 - frameworks/av: `media/libstagefright/ACodec.cpp` (legacy codec extension/crop handling), `media/libstagefright/colorconversion/SoftwareRenderer.cpp` (software rendering compatibility)
 - system/core: `libsuspend/autosuspend_wakeup_count.cpp` (legacy resume handling)

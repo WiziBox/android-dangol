@@ -16,7 +16,7 @@
 
 라이선스를 확인한 공유 작업 트리의 패치 11개 프로젝트, 커밋 고정 upstream manifest, 기기 설정 16개 및 HWC 소스를 고지사항과 함께 공개했습니다. [기기 트리 배치](docs/DEVICE-SOURCES.ko.md), [소유자 입력 기반 빌드·부트 패키징](docs/BUILD.ko.md), [라이선스 검토 결과](docs/LICENSE-REVIEW.ko.md)와 [소스 준비 절차](manifests/README.md)를 참조하세요. 공개 빌드 경로의 전체 빌드 성공이나 설치·복구 완료를 주장하지 않습니다.
 
-[WebView 입력 다운로드·검증](docs/WEBVIEW-INPUT.md): 공식 서버에서 정확한 ARM 객체를 다운로드하고 크기·SHA256·APK 구조를 확인하는 도구를 제공합니다. Dangol에서는 `--abi arm`을 사용하며 Acer 검증 트리에 적용하지 마세요.
+[WebView 입력 다운로드·검증](docs/WEBVIEW-INPUT.md): 공식 서버에서 정확한 ARM 객체를 다운로드하고 크기·SHA256·APK 구조를 확인하는 도구를 제공합니다. Dangol에서는 `--abi arm`을 사용하세요.
 
 [소유자 원본 입력 추출](docs/VENDOR-INPUTS.ko.md): 원본 raw ext4 백업에서 25개 고정 입력과 개인 Wi-Fi 보정 파일을 읽기 전용으로 추출·검증합니다. 제조사 바이너리나 MAC 주소가 포함된 보정 파일 자체는 공개하지 않습니다. 이 경로는 원본 커널과 짝을 이루는 Wi-Fi 모듈을 사용하며 새 커널의 호환성을 보장하지 않습니다.
 

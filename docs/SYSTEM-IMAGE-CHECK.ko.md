@@ -1,7 +1,6 @@
 # system 이미지의 제한된 개인정보 검사
 
-`tools/inspect_system.py`와 `tools/audit_system.py`는 같은 프로젝트의 Acer 공개
-도구를 Apache-2.0 고지와 함께 재사용했습니다. 이미지 검사에는 `--device dangol`을
+`tools/inspect_system.py`와 `tools/audit_system.py`는 Apache-2.0 프로젝트 도구입니다. 이미지 검사에는 `--device dangol`을
 지정합니다. 이미지 크기·형식 검사는 Python 표준 라이브러리로 Windows/Linux에서
 가능하지만 전체 파일 검사는 Linux의 e2fsprogs `debugfs`, `e2fsck`가 필요합니다.
 
@@ -32,7 +31,7 @@ Android sparse 이미지도 검사하며 변환이 필요하면 고정 소스에
 
 ## raw 출력 생성
 
-`expand_system.py`도 Acer의 Apache-2.0 프로젝트 도구를 재사용합니다. 별도
+`expand_system.py`는 Apache-2.0 프로젝트 도구입니다. 별도
 `simg2img` 없이 Python 표준 라이브러리로 지원하는 sparse를 raw로 변환합니다.
 Windows/Linux 모두 사용 가능하며 Dangol의 2GiB 크기·입력 전체 SHA-256을 검사합니다.
 

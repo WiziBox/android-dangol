@@ -1,6 +1,6 @@
 # Shared development tree patches — NOT a complete ROM patch set
 
-These text patches are exported from the Android 9 development workspace shared by dangol and Acer. Each `*.base-commit.txt` identifies the corresponding repository HEAD. The export covers tracked modifications against HEAD, not all untracked files or all Android repositories.
+These text patches are exported from the Android 9 development workspace used for this project. Each `*.base-commit.txt` identifies the corresponding repository HEAD. The export covers tracked modifications against HEAD, not all untracked files or all Android repositories.
 
 The device-specific source snapshots are withheld pending provenance review and are not included in this publication. Some changes are guarded by device properties while others affect shared code. Review and split them before reuse; do not apply them indiscriminately to another device.
 
