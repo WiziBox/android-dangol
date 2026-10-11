@@ -29,7 +29,26 @@
 현재 공개 도구는 이 전체 설치 경로를 구현하거나 실기로 검증하지 않았습니다.
 `fastboot OKAY`만으로 전체 eMMC 내용 검증을 대신하지 않습니다.
 
-## recovery는 별도 형식
+## 비공개 환경의 오프라인 읽기 길이 검사
+
+```sh
+python3 tools/check_boot_environment.py --environment /private/owner-environment.bin --boot-image /private/new-boot.img
+```
+
+자기 기기에서 별도로 확보한 16KiB 환경 블록만 입력합니다. 전체 eMMC 파일이나
+다른 사람의 환경은 사용하지 마세요. 도구는 little-endian CRC32, 중복 없는 환경
+항목, 개발 기록에서 확인된 정확한 bootcmd 구문과 읽기 길이를 검사합니다.
+알 수 없는 구문은 추측하지 않고 거부합니다. 값·환경 해시·개인 식별자를 출력하지
+않습니다. 종료 코드 0은 이 제한된 검사에서 읽기 길이가 충분함, 1은 부족함,
+2는 형식·CRC·파일 오류입니다. boot는 Android magic과 파일 크기만 검사하므로
+내용 검증에는 별도로 `audit_boot.py`가 필요합니다.
+
+2026-10-11 실제 보관한 수정 전·후 환경과 승인키 제거 후보를 대조했습니다.
+수정 후 환경의 읽기 길이는 42,712섹터, 후보에 필요한 길이는 42,704섹터였습니다.
+이는 환경 백업의 검사 결과일 뿐 현재 기기 환경·RAM 배치·부팅 성공의 증거가
+아닙니다. 수정·기기 기록·환경 자동 탐색은 하지 않습니다.
+
+## recovery 이미지 형식
 
 개발 기기에서 원본 mmcblk0p7은 67,108,864바이트 ext4 파일시스템이었으며
 `recovery.kernel`, `recovery.dtb`, `ramdisk-recovery.img`가 들어 있었습니다.
