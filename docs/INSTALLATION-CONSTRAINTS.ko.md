@@ -48,6 +48,8 @@ python3 tools/device_preflight.py --adb /path/to/adb --serial YOUR_DEVICE_SERIAL
 6. 현장 복구 수단이 있는 상태에서 일반 재부팅 및 콜드 부팅 확인.
 
 현재 공개 도구는 이 전체 설치 경로를 구현하거나 실기로 검증하지 않았습니다.
+
+[recovery ADB system 전송 구현](SYSTEM-INSTALLATION.ko.md)은 추가됐지만 합성 테스트만 통과했습니다. 일반 사용자 설치·복원 완료를 뜻하지 않으며 boot·환경 설치를 대신하지 않습니다.
 `fastboot OKAY`만으로 전체 eMMC 내용 검증을 대신하지 않습니다.
 
 ## 비공개 환경의 오프라인 읽기 길이 검사
