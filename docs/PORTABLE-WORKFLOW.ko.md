@@ -33,6 +33,8 @@ python3 tools/sanitize_boot.py --device dangol --input /path/to/private-boot.img
 
 ## 남은 작업
 
+설치 단계는 [확인된 설치·복구 제약](INSTALLATION-CONSTRAINTS.ko.md)을 먼저 참조하세요. 기존 개발 기기의 영구 읽기 길이 수정 결과와 공개 설치 도구의 미구현 상태를 구분합니다. recovery에 일반 Android boot 이미지를 기록하는 절차는 지원하지 않습니다.
+
 2026-10-11: [커밋 고정 소스 manifest와 패치 준비 절차](../manifests/README.md)를 추가했습니다. 709개 upstream 프로젝트와 11개 프로젝트의 tracked 텍스트 패치는 확보했지만 device/vendor·커널/DTB·WebView LFS 입력·boot 패키징은 미완성입니다. `tools/apply_patches.py`는 기존 수정본을 덮어쓰지 않고 커밋·해시·깨끗한 상태를 먼저 검사합니다.
 
 1. 커밋 고정 upstream manifest, 기기 소스와 최종 후속 수정 정리
