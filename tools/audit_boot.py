@@ -143,7 +143,7 @@ def audit_bytes(image, device):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--device', required=True, choices=['dangol', 'acer-a1-840fhd'])
+    parser.add_argument('--device', required=True, choices=['dangol'])
     parser.add_argument('image', type=Path)
     args = parser.parse_args(argv)
     try:
