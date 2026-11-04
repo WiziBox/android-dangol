@@ -25,8 +25,8 @@ class OwnerComposeTests(unittest.TestCase):
         self.source.write_bytes(data)
         self.cal.write_bytes(CAL)
         self.expected = hashlib.sha256(data).hexdigest()
-        self.target = tool.PROFILES['acer-a1-840fhd'][1]
-        profiles = patch.dict(tool.PROFILES, {'acer-a1-840fhd': (4096, self.target)})
+        self.target = tool.PROFILES['dangol'][1]
+        profiles = patch.dict(tool.PROFILES, {'dangol': (4096, self.target)})
         profiles.start()
         self.addCleanup(profiles.stop)
         checker = patch.object(tool, 'filesystem_check')
@@ -52,7 +52,7 @@ class OwnerComposeTests(unittest.TestCase):
         raise AssertionError('unexpected command')
     def invoke(self, apply=False, confirm=False):
         return tool.compose(self.source, self.cal, self.output, self.expected,
-                            'acer-a1-840fhd', apply, confirm)
+                            'dangol', apply, confirm)
     def test_dry_no_output(self):
         self.assertTrue(self.invoke()['dry_run'])
         self.assertFalse(self.output.exists())
@@ -86,11 +86,11 @@ class OwnerComposeTests(unittest.TestCase):
         for extra in (b'psk=PRIVATE_FIXTURE', b'SSID=PRIVATE_FIXTURE', b'network={',
                       b'key=-----BEGIN RSA PRIVATE KEY-----'):
             with self.assertRaises(ValueError):
-                tool.validate_calibration(CAL + extra + b'\n', 'acer-a1-840fhd')
-    def test_dangol_profile_and_wrong_board(self):
+                tool.validate_calibration(CAL + extra + b'\n', 'dangol')
+    def test_missing_board_field(self):
         self.assertEqual(tool.validate_calibration(CAL, 'dangol'), CAL)
         with self.assertRaises(ValueError):
-            tool.validate_calibration(CAL.replace(b'0x5ef', b'0xffff'), 'acer-a1-840fhd')
+            tool.validate_calibration(CAL.replace(b'boardtype=', b'otherfield='), 'dangol')
     def test_readback_mismatch_preserves_partial(self):
         reader = self.read
         with patch.object(tool.subprocess, 'run'), patch.object(tool, 'fs_read', side_effect=lambda image, command: (b'WRONG', b'') if command.startswith('cat ') else reader(image, command)):
@@ -101,7 +101,7 @@ class OwnerComposeTests(unittest.TestCase):
         self.cal.write_bytes(CAL + b'password=PRIVATE_FIXTURE\n')
         captured = io.StringIO()
         with patch.object(tool.sys, 'platform', 'linux'), contextlib.redirect_stdout(captured):
-            result = tool.main(['--device', 'acer-a1-840fhd', '--input', str(self.source),
+            result = tool.main(['--device', 'dangol', '--input', str(self.source),
                                 '--calibration', str(self.cal), '--output', str(self.output),
                                 '--base-sha256', self.expected])
         self.assertEqual(result, 2)

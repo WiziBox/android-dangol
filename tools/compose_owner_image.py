@@ -17,7 +17,6 @@ import sys
 import tempfile
 
 PROFILES = {
-    'acer-a1-840fhd': (1887436800, '/vendor/firmware/bcmdhd_aob.cal_43241_b4'),
     'dangol': (2147483648, '/vendor/firmware/nvram_ap6212.txt'),
 }
 
@@ -38,11 +37,7 @@ def validate_calibration(data, device):
         if not separator or key in fields:
             raise ValueError('invalid calibration fields')
         fields[key] = value.strip()
-    if device == 'acer-a1-840fhd':
-        if any(fields.get(k) != v for k, v in
-               {'boardtype': '0x5ef', 'boardrev': '0x1100', 'sromrev': '9'}.items()):
-            raise ValueError('wrong board profile')
-    elif device == 'dangol':
+    if device == 'dangol':
         if not {'boardtype', 'sromrev', 'macaddr'} <= fields.keys():
             raise ValueError('incomplete board profile')
     else:
