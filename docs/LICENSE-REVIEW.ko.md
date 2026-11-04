@@ -8,7 +8,7 @@
 
 kernel/boot 배포에는 실제 바이너리에 대응하는 커널 소스와 설정·빌드 절차를 준비해야 합니다. 독점 GPU·코덱·Wi-Fi 파일도 별도 검토가 필요합니다. 원본 커널을 재사용한다고 이 검토가 생략되는 것은 아닙니다.
 
-추가 조사 후보로 [Nexell의 Linux 4.4 소스 저장소](https://github.com/NexellCorp/linux_kernel-4.4.x)가 있습니다. 이 저장소의 존재나 버전 유사성만으로 TAB4418 기기의 원본 바이너리에 대응하는 소스·설정·변경분이라고 확인된 것은 아닙니다. 실제 일치 여부를 확인하기 전에는 배포 의무가 충족됐다고 판단하지 않습니다.
+추가 조사 후보로 [Nexell의 Linux 4.4 소스 저장소](https://github.com/NexellCorp/linux_kernel-4.4.x)가 있습니다. 해당 저장소 README는 ARTIK 기기를 대상으로 설명하며 TAB4418 대응을 확인하지 못했습니다. [FriendlyELEC의 S5P6818 소스 빌드 안내](https://wiki.friendlyelec.com/wiki/index.php/Template%3AS5P6818BuildFromSource)는 다른 보드용 커널 트리를 안내합니다. 어느 쪽도 이 기기의 원본 바이너리에 대응하는 소스·설정·변경분이라고 확인된 것은 아닙니다. 실제 일치 여부를 확인하기 전에는 배포 의무가 충족됐다고 판단하지 않습니다.
 
 법적 무위험을 보증하는 문서는 아닙니다. 검토를 완료하지 못한 파일을 공개에서 제외해 범위를 제한한 상태입니다.
 
