@@ -7,7 +7,7 @@
       "upstream": "https://github.com/LineageOS/android_frameworks_native",
       "base_commit": "38be48f36da1acd812670fbecb75bffca9b4cd98",
       "patch": "shared-workspace-patches/frameworks-native.patch",
-      "sha256": "28768eb5d937704bad8b84d8bbe1ab08dbb9244e89399ae22d88713a647fc5a6",
+      "sha256": "b26578fe31ff84bddac109c5a02d963b9a6566096028f1d8e533a75c94d34da6",
       "modified_files": [
         "libs/ui/Gralloc2.cpp",
         "services/inputflinger/InputReader.cpp",
