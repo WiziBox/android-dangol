@@ -19,10 +19,8 @@
       "upstream": "https://github.com/LineageOS/android_frameworks_base",
       "base_commit": "ea0de66d71ac88db42f26d9b63c9c1941aa097fc",
       "patch": "shared-workspace-patches/frameworks-base.patch",
-      "sha256": "8c38ab71aaa3cc620274a72d2f5efc51877650ccc52063cccb4abc29ac958813",
+      "sha256": "327568593b9f8fa324169530350f3c5cc28ce844cf088f9f2b89c44f03699c81",
       "modified_files": [
-        "core/jni/fd_utils.cpp",
-        "libs/hwui/Properties.cpp",
         "services/core/java/com/android/server/display/ColorFade.java",
         "services/core/java/com/android/server/net/NetworkPolicyManagerService.java"
       ]
