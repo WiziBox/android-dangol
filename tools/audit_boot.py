@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Read-only Android v0 / Acer OSIP ramdisk publication audit.
+"""Read-only Android v0 ramdisk publication audit.
 
 Never extracts archive paths, contacts a device, prints key contents or modifies
 an image. This is a limited boot audit, NOT an entire-ROM license/security gate.
@@ -35,24 +35,6 @@ def ramdisk_from_boot(image, device):
             raise ValueError('unsupported dangol header version/page size')
         start = page + align(kernel_size, page)
         kind = 'android-v0'
-    elif device == 'acer-a1-840fhd':
-        if len(image) < 0x3200 or image[:4] != b'$OS$':
-            raise ValueError('expected Acer OSIP boot container')
-        checksum = 0
-        for byte in image[:56]:
-            checksum ^= byte
-        if checksum:
-            raise ValueError('invalid OSIP header checksum')
-        sectors = struct.unpack_from('<I', image, 0x30)[0]
-        if len(image) != 512 + sectors * 512:
-            raise ValueError('OSIP declared payload size mismatch')
-        kernel_size, ramdisk_size = struct.unpack_from('<II', image, 512 + 0x400)
-        if kernel_size == 0 or kernel_size % 4096:
-            raise ValueError('invalid OSIP kernel allocation')
-        if image[0x3200 + 0x202:0x3200 + 0x206] != b'HdrS':
-            raise ValueError('missing Linux bzImage header')
-        start = 0x3200 + kernel_size
-        kind = 'acer-osip'
     else:
         raise ValueError('unsupported device')
     if not ramdisk_size or start + ramdisk_size > len(image):

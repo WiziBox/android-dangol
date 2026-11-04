@@ -7,25 +7,13 @@ import sys
 import tempfile
 import unittest
 
-from test_audit_boot import android, osip, audit
+from test_audit_boot import android, audit
 
 sys.path.insert(0, str(Path(__file__).parents[1] / 'tools'))
 spec = importlib.util.spec_from_file_location('sanitize_boot', Path(__file__).parents[1] / 'tools/sanitize_boot.py')
 sanitizer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sanitizer)
 
-
-def unsigned_osip(entries):
-    image = bytearray(osip(entries))
-    image[8:10] = b'\x01\x01'
-    struct.pack_into('<H', image, 10, 56)
-    image[52] = 1
-    image[7] = 0
-    checksum = 0
-    for byte in image[:56]:
-        checksum ^= byte
-    image[7] = checksum
-    return bytes(image)
 
 
 class SanitizeTests(unittest.TestCase):
@@ -40,17 +28,6 @@ class SanitizeTests(unittest.TestCase):
         self.assertEqual(result[2048:4096], source[2048:4096])
         self.assertEqual(report['removed_entries'], ['adb_keys'])
         self.assertNotIn('HOST_APPROVAL_FIXTURE', str(report))
-
-    def test_osip_preserves_kernel(self):
-        source = unsigned_osip(self.entries)
-        result, report = sanitizer.sanitize(source, 'acer-a1-840fhd')
-        self.assertTrue(report['boot_key_audit_passed'])
-        self.assertEqual(result[0x3200:0x4200], source[0x3200:0x4200])
-        checksum = 0
-        for byte in result[:56]:
-            checksum ^= byte
-        self.assertEqual(checksum, 0)
-        audit.ramdisk_from_boot(result, 'acer-a1-840fhd')
 
     def test_repeatable(self):
         source = android(self.entries)
@@ -68,10 +45,6 @@ class SanitizeTests(unittest.TestCase):
     def test_missing_properties_refused(self):
         with self.assertRaises(ValueError):
             sanitizer.sanitize(android([('adb_keys', b'')]), 'dangol')
-
-    def test_signed_or_unknown_osip_refused(self):
-        with self.assertRaises(ValueError):
-            sanitizer.sanitize(osip(self.entries), 'acer-a1-840fhd')
 
     def test_unknown_android_tail_refused(self):
         with self.assertRaises(ValueError):

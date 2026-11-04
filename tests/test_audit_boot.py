@@ -32,29 +32,12 @@ def android(entries):
     return bytes(header) + b'KERN' + bytes(2044) + ramdisk
 
 
-def osip(entries):
-    ramdisk = gzip.compress(archive(entries), mtime=0)
-    image = bytearray(0x3200 + 4096) + ramdisk
-    image += bytes((-len(image)) % 512)
-    image[:4] = b'$OS$'
-    image[0x3200 + 0x202:0x3200 + 0x206] = b'HdrS'
-    struct.pack_into('<II', image, 512 + 0x400, 4096, len(ramdisk))
-    struct.pack_into('<I', image, 0x30, (len(image) - 512) // 512)
-    checksum = 0
-    for byte in image[:56]:
-        checksum ^= byte
-    image[7] ^= checksum
-    return bytes(image)
-
 
 class AuditTests(unittest.TestCase):
     def test_clean_android(self):
         result = audit.audit_bytes(android([('default.prop', b'ro.adb.secure=1\nro.secure=1\n')]), 'dangol')
         self.assertTrue(result['boot_key_audit_passed'])
         self.assertFalse(result['publication_approved'])
-
-    def test_clean_osip(self):
-        self.assertTrue(audit.audit_bytes(osip([('default.prop', b'ro.adb.secure=1\n')]), 'acer-a1-840fhd')['boot_key_audit_passed'])
 
     def test_adb_keys_rejected_even_empty(self):
         result = audit.audit_bytes(android([('default.prop', b'ro.adb.secure=1\n'), ('./adb_keys', b'')]), 'dangol')
@@ -84,15 +67,9 @@ class AuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             list(audit.cpio_entries(archive([('x', b'a')])[:-1]))
 
-    def test_wrong_osip_checksum(self):
-        broken = bytearray(osip([]))
-        broken[7] ^= 1
-        with self.assertRaises(ValueError):
-            audit.audit_bytes(bytes(broken), 'acer-a1-840fhd')
-
     def test_wrong_device(self):
         with self.assertRaises(ValueError):
-            audit.audit_bytes(osip([]), 'dangol')
+            audit.audit_bytes(b'unsupported image', 'dangol')
 
     def test_hidden_adb_public_key(self):
         public_fixture = struct.pack('<I', 64) + bytes(520)
@@ -112,10 +89,6 @@ class AuditTests(unittest.TestCase):
                 audit.audit_bytes(android([('data', bytes(1024))]), 'dangol')
         finally:
             audit.MAX_RAMDISK = original_limit
-
-    def test_osip_declared_size(self):
-        with self.assertRaises(ValueError):
-            audit.audit_bytes(osip([]) + bytes(512), 'acer-a1-840fhd')
 
     def test_no_private_content_in_report(self):
         result = audit.audit_bytes(android([('default.prop', b'ro.adb.secure=1\n'), ('adb_keys', b'PRIVATE_HOST_MARKER')]), 'dangol')

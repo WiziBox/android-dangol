@@ -108,29 +108,7 @@ def repackage(image, compressed, device):
         preserved = {'kernel_sha256': hashlib.sha256(kernel).hexdigest(),
                      'second_sha256': hashlib.sha256(second).hexdigest()}
     else:
-        # One unsigned OSIP image descriptor, matching the known Acer container.
-        if image[8:10] != b'\x01\x01' or struct.unpack_from('<H', image, 10)[0] != 56 or image[52] != 1:
-            raise ValueError('unsupported or signed OSIP descriptor')
-        kernel_size, old_size = struct.unpack_from('<II', image, 512 + 0x400)
-        start = 0x3200 + kernel_size
-        if any(image[start + old_size:]):
-            raise ValueError('unknown OSIP trailer/signature')
-        result = bytearray(image[:start]) + compressed
-        result += bytes((-len(result)) % 512)
-        struct.pack_into('<I', result, 512 + 0x404, len(compressed))
-        struct.pack_into('<I', result, 0x30, (len(result) - 512) // 512)
-        result[7] = 0
-        checksum = 0
-        for byte in result[:56]:
-            checksum ^= byte
-        result[7] = checksum
-        # Compare every preserved byte, allowing only the three sizing/checksum fields.
-        check = bytearray(result[:start])
-        for offset, count in ((7, 1), (0x30, 4), (512 + 0x404, 4)):
-            check[offset:offset + count] = image[offset:offset + count]
-        if check != image[:start]:
-            raise ValueError('OSIP stub/kernel preservation failed')
-        preserved = {'kernel_allocation_sha256': hashlib.sha256(image[0x3200:start]).hexdigest()}
+        raise ValueError('unsupported device')
     if len(result) > MAX_IMAGE:
         raise ValueError('sanitized image exceeds size limit')
     return bytes(result), preserved
