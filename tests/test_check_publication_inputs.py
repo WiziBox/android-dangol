@@ -11,7 +11,7 @@ from check_publication_inputs import inspect_file, staged_inputs
 class PublicationTests(unittest.TestCase):
     def test_private_paths(self):
         for name in ('adbkey', 'root/adb_keys', 'backup/receipt.json', 'system.img',
-                     'vendor/module.ko', 'owner.p12', 'id_ed25519'):
+                     'vendor/module.ko', 'owner.p12', 'private.key', 'private.p8', 'id_ed25519'):
             self.assertIsNotNone(inspect_file(name, b''))
     def test_key_headers(self):
         for kind in ('RSA ', 'EC ', 'OPENSSH ', 'ENCRYPTED ', ''):

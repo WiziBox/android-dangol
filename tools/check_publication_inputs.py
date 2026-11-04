@@ -8,7 +8,7 @@ import re
 import subprocess
 import sys
 
-FORBIDDEN_SUFFIXES = {'.img', '.bin', '.so', '.ko', '.apk', '.zip', '.pk8',
+FORBIDDEN_SUFFIXES = {'.img', '.bin', '.so', '.ko', '.apk', '.zip', '.key', '.p8', '.pk8',
                       '.p12', '.pfx', '.jks', '.keystore'}
 KEY_HEADER = re.compile(rb'(?m)^-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----\r?$')
 
