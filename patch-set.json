@@ -82,16 +82,6 @@
       ]
     },
     {
-      "project": "packages/providers/TelephonyProvider",
-      "upstream": "https://github.com/LineageOS/android_packages_providers_TelephonyProvider",
-      "base_commit": "3d07f3a1821c0953d156206e288bb484a0c0f399",
-      "patch": "shared-workspace-patches/packages-providers-TelephonyProvider.patch",
-      "sha256": "836fb2227d5729fbb6c405464a48bdae35ad9117a6e895598ad436203273158c",
-      "modified_files": [
-        "src/com/android/providers/telephony/TelephonyProvider.java"
-      ]
-    },
-    {
       "project": "system/libhwbinder",
       "upstream": "https://github.com/LineageOS/android_system_libhwbinder",
       "base_commit": "5baf0b1db573f8da519d80afdfcb25042d84b8b5",
