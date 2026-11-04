@@ -56,5 +56,5 @@ class ExpansionTests(unittest.TestCase):
     def test_wrong_checksum_before_output(self):
         self.source.write_bytes(filesystem())
         with self.assertRaises(ValueError):
-            tool.expand(self.source, self.output, '0' * 64, 'acer-a1-840fhd', True)
+            tool.expand(self.source, self.output, '0' * 64, 'dangol', True)
         self.assertFalse(self.output.exists())

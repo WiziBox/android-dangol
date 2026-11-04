@@ -13,7 +13,7 @@ import struct
 import sys
 import zlib
 
-PARTITIONS = {'acer-a1-840fhd': 1887436800, 'dangol': 2147483648}
+PARTITIONS = {'dangol': 2147483648}
 MAGIC = 0xED26FF3A
 BUFFER = 1024 * 1024
 
