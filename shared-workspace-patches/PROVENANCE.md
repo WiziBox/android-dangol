@@ -18,6 +18,6 @@ These are **modified** upstream sources distributed as textual patches, not unmo
 - system/core: `libsuspend/autosuspend_wakeup_count.cpp` (legacy resume handling)
 - system/netd: `server/TetherController.cpp` (legacy counter-chain initialization)
 
-The eleven files listed above belong to the first five projects and carry Apache-2.0 headers. Five more projects (ten files) are recorded in additional-provenance.json, bringing the current total to ten projects and twenty-one files. Skia uses its original BSD-3-Clause license, not Apache-2.0. Original file headers and available upstream NOTICE/LICENSE files are preserved. The previous eleven-patch set was checked against base commits using disposable Git indexes; removing a device-specific patch does not constitute a new full build or functional validation.
+The eleven files listed above belong to the first five projects and carry Apache-2.0 headers. Four more projects (nine files) are recorded in additional-provenance.json, bringing the current total to nine projects and twenty files. Original file headers and available upstream NOTICE/LICENSE files are preserved. The previous eleven-patch set was checked against base commits using disposable Git indexes; removing device-specific patches does not constitute a new full build or functional validation.
 
 No proprietary library implementation, firmware, Google APK, kernel binary or device backup is included. This subset must not be mistaken for a complete corresponding kernel source distribution or a complete ROM source tree.

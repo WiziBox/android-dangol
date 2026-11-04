@@ -59,16 +59,6 @@
       ]
     },
     {
-      "project": "external/skia",
-      "upstream": "https://github.com/LineageOS/android_external_skia",
-      "base_commit": "bfdc5ebd1697b06f1ececcaf9c748d00b738b2fa",
-      "patch": "shared-workspace-patches/external-skia.patch",
-      "sha256": "2a498f1bafa4bb6b3bda2ca8d4f85e6f3a89f89361cf61b6e312f4d4f2927b41",
-      "modified_files": [
-        "src/gpu/gl/GrGLCaps.cpp"
-      ]
-    },
-    {
       "project": "frameworks/opt/net/wifi",
       "upstream": "https://github.com/LineageOS/android_frameworks_opt_net_wifi",
       "base_commit": "934ca88f867996977ed25366f8abdc25584e46bb",
