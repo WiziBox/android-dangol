@@ -33,7 +33,7 @@ python3 tools/sanitize_boot.py --device dangol --input /path/to/private-boot.img
 
 ## 남은 작업
 
-설치 단계는 [확인된 설치·복구 제약](INSTALLATION-CONSTRAINTS.ko.md)을 먼저 참조하세요. 기존 개발 기기의 영구 읽기 길이 수정 결과와 공개 설치 도구의 미구현 상태를 구분합니다. recovery에 일반 Android boot 이미지를 기록하는 절차는 지원하지 않습니다.
+설치 단계는 [확인된 설치·복구 제약](INSTALLATION-CONSTRAINTS.ko.md)과 [boot 설치 안내](BOOT-INSTALLATION.ko.md)를 먼저 참조하세요. 공개 저장소에는 백업과 system·boot 기록 도구가 구현되어 있지만, 새 도구는 실기 검증을 받지 않았고 완전한 복구 절차도 아닙니다. recovery에 일반 Android boot 이미지를 기록하는 절차는 지원하지 않습니다.
 
 2026-10-11: [커밋 고정 소스 manifest와 패치 준비 절차](../manifests/README.md)를 추가했습니다. 709개 upstream 프로젝트와 11개 프로젝트의 tracked 텍스트 패치는 확보했지만 device/vendor·커널/DTB·WebView LFS 입력·boot 패키징은 미완성입니다. `tools/apply_patches.py`는 기존 수정본을 덮어쓰지 않고 커밋·해시·깨끗한 상태를 먼저 검사합니다.
 
@@ -44,6 +44,6 @@ python3 tools/sanitize_boot.py --device dangol --input /path/to/private-boot.img
 5. 기존 PC 경로와 out에 의존하지 않는 클린 빌드
 6. 최종 boot 크기에 맞는 U-Boot 절차와 기기별 백업·복구 안내
 7. 검증 가능한 Release manifest·체크섬·다운로드·플래싱 스크립트
-8. 실기기 회귀 결과 기록 및 시험판 공개
+8. 기존 실기 기록과 새 도구의 미검증 상태를 구분해 알려진 제한을 기록하고 배포 가능 여부 검토. 소유자는 추가 실기 시험을 하지 않기로 결정했습니다.
 
 다른 기기의 전체 eMMC 백업이나 U-Boot 환경을 복사하는 방식은 제공하지 않습니다. 플래싱 자동화와 지금 연결된 기기에 실제 기록하는 작업은 구분합니다.
