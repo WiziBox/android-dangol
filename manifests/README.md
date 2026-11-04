@@ -29,7 +29,7 @@ python3 tools/apply_patches.py --source /absolute/path/to/android9-source
 python3 tools/apply_patches.py --source /absolute/path/to/android9-source --apply
 ```
 
-The tool checks all eleven project's base commits, patch hashes, clean status and applicability before modifying any project. It does not reset/delete existing changes. An unexpected application failure may leave earlier projects applied; the report lists them and stops without an automatic reset. This is source preparation only, not a full ROM build or flashing command.
+The tool checks all listed projects' base commits, patch hashes, clean status and applicability before modifying any project. It does not reset/delete existing changes. An unexpected application failure may leave earlier projects applied; the report lists them and stops without an automatic reset. This is source preparation only, not a full ROM build or flashing command.
 
 ## Verification recorded on 2026-10-11
 

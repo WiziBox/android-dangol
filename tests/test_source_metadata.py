@@ -13,8 +13,8 @@ class SourceMetadataTests(unittest.TestCase):
     def test_patch_index_matches_files(self):
         index = json.loads((ROOT / 'patch-set.json').read_text())
         self.assertEqual(index['schema'], 1)
-        self.assertEqual(len(index['patches']), 11)
-        self.assertEqual(len({entry['project'] for entry in index['patches']}), 11)
+        self.assertEqual(len(index['patches']), 10)
+        self.assertEqual(len({entry['project'] for entry in index['patches']}), 10)
         for entry in index['patches']:
             payload = (ROOT / entry['patch']).read_bytes()
             self.assertEqual(hashlib.sha256(payload).hexdigest(), entry['sha256'])

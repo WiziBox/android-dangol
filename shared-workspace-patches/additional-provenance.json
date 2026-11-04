@@ -26,24 +26,6 @@
     ]
   },
   {
-    "project": "hardware/broadcom/wlan",
-    "upstream": "https://github.com/LineageOS/android_hardware_broadcom_wlan",
-    "base_commit": "96108864e101415d8f385d47e5bdc0dc7121eaa9",
-    "patch_sha256": "56c55af25beeb4988e08b4d3b4a780b56fea0d8f86a5c80141f2ffdd9bd0d947",
-    "files": [
-      {
-        "path": "bcmdhd/wifi_hal/Android.mk",
-        "license": "Apache-2.0",
-        "base_file_sha256": "4bdcb8566113af5a4991d9adca1ae9b2729ac9c164d355f40504e9494f079634"
-      },
-      {
-        "path": "bcmdhd/wifi_hal/wifi_hal.cpp",
-        "license": "Apache-2.0",
-        "base_file_sha256": "c78922ee106555bffd3eae02ffd8d1f3866dd7b73dd04e1ffeb4672d59791e9e"
-      }
-    ]
-  },
-  {
     "project": "hardware/interfaces",
     "upstream": "https://github.com/LineageOS/android_hardware_interfaces",
     "base_commit": "247f33da70920c5d79765faab67ee3191133723c",
