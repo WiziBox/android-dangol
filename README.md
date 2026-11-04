@@ -24,6 +24,8 @@
 
 [다른 PC용 빌드·다운로드·플래싱 작업 현황](docs/PORTABLE-WORKFLOW.ko.md): boot 승인키 검사 도구와 Windows/Linux 단위 테스트를 추가했습니다. GitHub Actions도 이 도구만 검사하며 ROM을 빌드하거나 플래싱하지 않습니다.
 
+[설치·복구 제약](docs/INSTALLATION-CONSTRAINTS.ko.md)과 [boot 설치 절차](docs/BOOT-INSTALLATION.ko.md): 백업과 복구 수단을 먼저 준비해야 하며, 공개 도구는 아직 실기 설치 검증을 받지 않았습니다.
+
 개발 기기에서는 Android 9 부팅, 화면·터치 방향, 하단 내비게이션 및 Wi-Fi 관련 수정 작업을 수행했습니다. 이것이 다른 기기의 호환성이나 장시간 안정성을 보장하지는 않습니다.
 
 진단용 boot에는 개발 PC의 ADB 공개키가 들어간 후보가 있어 그대로 공개하지 않습니다. 실기기에 적용한 후속 수정과 기존 system 이미지의 일치 여부도 배포 전에 정리해야 합니다.
